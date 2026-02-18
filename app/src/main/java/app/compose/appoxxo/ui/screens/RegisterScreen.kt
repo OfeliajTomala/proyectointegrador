@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import app.compose.appoxxo.data.util.UiState
 import app.compose.appoxxo.ui.components.AppButton
 import app.compose.appoxxo.ui.components.AppTextField
+import app.compose.appoxxo.ui.components.PasswordTextField
 import app.compose.appoxxo.viewmodel.AuthViewModel
 
 @Composable
@@ -52,11 +53,14 @@ fun RegisterScreen(
 
             AppTextField(value = name, onValueChange = { name = it }, label = "Nombre completo")
             Spacer(modifier = Modifier.height(12.dp))
+
             AppTextField(value = email, onValueChange = { email = it }, label = "Correo electrónico")
             Spacer(modifier = Modifier.height(12.dp))
-            AppTextField(value = password, onValueChange = { password = it }, label = "Contraseña", isPassword = true)
+
+            PasswordTextField(value = password, onValueChange = { password = it }, label = "Contraseña", isPassword = true)
             Spacer(modifier = Modifier.height(12.dp))
-            AppTextField(
+
+            PasswordTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 label = "Confirmar contraseña",
