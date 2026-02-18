@@ -1,0 +1,44 @@
+# Archivos de configuración de Android Studio
+
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+
+# Carpetas de compilación
+app/build
+captures/
+
+# Archivos generados
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.log
+
+# Kotlin
+.kotlin/
+
+# Firebase (NO subir si el repo es público)
+google-services.json
+
+
+# Keystore (seguridad)
+*.jks
+*.keystore
