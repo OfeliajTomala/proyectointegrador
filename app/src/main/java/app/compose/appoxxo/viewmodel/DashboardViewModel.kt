@@ -10,10 +10,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+
 data class DashboardStats(
     val totalProducts: Int = 0,
+    val totalStock: Int = 0,
+    val lowStockCount: Int = 0,
     val lowStockProducts: List<Product> = emptyList(),
-    val totalInventoryValue: Double = 0.0
+    val totalInventoryValue: Double = 0.0,
+    val recentProducts: List<Product> = emptyList()
 )
 
 class DashboardViewModel(
@@ -35,10 +39,14 @@ class DashboardViewModel(
             _uiState.value = UiState.Loading
             try {
                 val products = repository.getProducts()
+                val lowStock = products.filter { it.stock <= 5 }
                 _stats.value = DashboardStats(
                     totalProducts = products.size,
-                    lowStockProducts = products.filter { it.stock <= 5 },
-                    totalInventoryValue = products.sumOf { it.price * it.stock }
+                    totalStock = products.sumOf { it.stock },
+                    lowStockCount = lowStock.size,
+                    lowStockProducts = lowStock,
+                    totalInventoryValue = products.sumOf { it.price * it.stock },
+                    recentProducts = products.takeLast(5).reversed()
                 )
                 _uiState.value = UiState.Idle
             } catch (e: Exception) {

@@ -13,8 +13,9 @@ class AuthRepository {
     private val db = FirebaseFirestore.getInstance()
     private val usersRef = db.collection("users")
 
-    // Caché en memoria del usuario actual para evitar lecturas extra a Firestore
     private var cachedUser: User? = null
+
+    // ─── Auth ────────────────────────────────────────────────────
 
     suspend fun register(
         email: String,
@@ -26,7 +27,15 @@ class AuthRepository {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val uid = result.user?.uid ?: throw Exception("UID nulo tras registro")
             val user = User(uid = uid, name = name, email = email, role = role)
-            usersRef.document(uid).set(user).await()
+            // Guardamos como Map para que "role" llegue a Firestore como String
+            // y coincida con la regla: request.resource.data.role == 'CAJERO'
+            val data = mapOf(
+                "uid"   to uid,
+                "name"  to name,
+                "email" to email,
+                "role"  to role.name        // "CAJERO", "ENCARGADO" o "ADMIN"
+            )
+            usersRef.document(uid).set(data).await()
             cachedUser = user
             Result.success(user)
         } catch (e: Exception) {
@@ -56,4 +65,35 @@ class AuthRepository {
     fun getCurrentUserId(): String? = auth.currentUser?.uid
 
     fun getCurrentUserName(): String? = cachedUser?.name
+
+    fun getCurrentUser(): User? = cachedUser
+
+    // ─── Administración de usuarios (solo ADMIN) ─────────────────
+
+    suspend fun getUsers(): Result<List<User>> {
+        return try {
+            val users = usersRef.get().await().toObjects(User::class.java)
+            Result.success(users)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateUserRole(uid: String, role: UserRole): Result<Unit> {
+        return try {
+            usersRef.document(uid).update("role", role.name).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteUser(uid: String): Result<Unit> {
+        return try {
+            usersRef.document(uid).delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

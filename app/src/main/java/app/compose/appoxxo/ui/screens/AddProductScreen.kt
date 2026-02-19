@@ -6,8 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import app.compose.appoxxo.data.model.Product
 import app.compose.appoxxo.data.util.UiState
@@ -16,6 +15,7 @@ import app.compose.appoxxo.ui.components.AppTextField
 import app.compose.appoxxo.viewmodel.ProductViewModel
 import app.compose.appoxxo.R
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddProductScreen(
@@ -23,7 +23,7 @@ fun AddProductScreen(
     onProductSaved: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var stock by remember { mutableStateOf("") }
 
@@ -32,10 +32,7 @@ fun AddProductScreen(
 
     LaunchedEffect(uiState) {
         when (uiState) {
-            is UiState.Success -> {
-                viewModel.resetState()
-                onProductSaved()
-            }
+            is UiState.Success -> { viewModel.resetState(); onProductSaved() }
             is UiState.Error -> {
                 snackbarHostState.showSnackbar((uiState as UiState.Error).message)
                 viewModel.resetState()
@@ -51,8 +48,9 @@ fun AddProductScreen(
                 navigationIcon = {
                     IconButton(onClick = onProductSaved) {
                         Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_arrow_back),
-                            contentDescription = "Volver")
+                            painter = painterResource(id = R.drawable.ic_arrow_back),
+                            contentDescription = "Volver"
+                        )
                     }
                 }
             )
@@ -69,42 +67,32 @@ fun AddProductScreen(
         ) {
             AppTextField(value = name, onValueChange = { name = it }, label = "Nombre del producto")
             AppTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = "Descripción",
-                singleLine = false
+                value = code, onValueChange = { code = it },
+                label = "Código", singleLine = false
             )
             AppTextField(
-                value = price,
-                onValueChange = { price = it },
-                label = "Precio",
+                value = price, onValueChange = { price = it }, label = "Precio",
                 isError = price.isNotEmpty() && price.toDoubleOrNull() == null,
                 errorMessage = "Ingresa un número válido"
             )
             AppTextField(
-                value = stock,
-                onValueChange = { stock = it },
-                label = "Stock inicial",
+                value = stock, onValueChange = { stock = it }, label = "Stock inicial",
                 isError = stock.isNotEmpty() && stock.toIntOrNull() == null,
                 errorMessage = "Ingresa un número entero"
             )
-
             Spacer(modifier = Modifier.height(8.dp))
-
             val isFormValid = name.isNotBlank()
                     && price.toDoubleOrNull() != null
                     && stock.toIntOrNull() != null
-
             AppButton(
                 text = "Guardar producto",
                 onClick = {
                     viewModel.addProduct(
                         Product(
                             name = name.trim(),
-                            description = description.trim(),
+                            codigo = code.trim(),
                             price = price.toDouble(),
                             stock = stock.toInt()
-                            // createdBy lo agrega el ViewModel con el UID real
                         )
                     )
                 },

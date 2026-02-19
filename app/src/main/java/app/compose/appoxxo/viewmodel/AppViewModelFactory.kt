@@ -7,6 +7,8 @@ import app.compose.appoxxo.data.repository.ProductRepository
 import kotlin.jvm.java
 
 // Factory personalizada para poder inyectar repositorios manualmente
+
+
 class AppViewModelFactory(
     private val authRepository: AuthRepository,
     private val productRepository: ProductRepository
@@ -26,6 +28,9 @@ class AppViewModelFactory(
 
             modelClass.isAssignableFrom(DashboardViewModel::class.java) ->
                 DashboardViewModel(repository = productRepository) as T
+
+            modelClass.isAssignableFrom(UserViewModel::class.java) ->
+                UserViewModel(repository = authRepository) as T
 
             else -> throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")
         }

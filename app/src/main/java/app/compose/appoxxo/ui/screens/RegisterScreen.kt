@@ -12,6 +12,7 @@ import app.compose.appoxxo.ui.components.AppTextField
 import app.compose.appoxxo.ui.components.PasswordTextField
 import app.compose.appoxxo.viewmodel.AuthViewModel
 
+
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel,
@@ -70,16 +71,17 @@ fun RegisterScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
+            val isFormValid = name.isNotBlank() &&
+                    email.isNotBlank() &&
+                    password.isNotBlank() &&
+                    password == confirmPassword
+
             AppButton(
                 text = "Registrarse",
-                onClick = {
-                    if (password == confirmPassword) {
-                        viewModel.register(email, password, name)
-                    }
-                },
+                onClick = { viewModel.register(email.trim(), password, name.trim()) },
                 modifier = Modifier.fillMaxWidth(),
                 containerColor = MaterialTheme.colorScheme.primary,
-                enabled = password == confirmPassword,
+                enabled = isFormValid,
                 isLoading = uiState is UiState.Loading
             )
             Spacer(modifier = Modifier.height(12.dp))

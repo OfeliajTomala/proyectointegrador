@@ -1,6 +1,5 @@
 package app.compose.appoxxo.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -12,32 +11,39 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = RedPrimaryDark,
+    onPrimary = LightText,
+
+    secondary = YellowSecondaryDark,
+    onSecondary = DarkText,
+
+    background = DarkBackground,
+    onBackground = LightText,
+
+    surface = DarkBackground,
+    onSurface = LightText
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = RedPrimaryLight,
+    onPrimary = White,
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    secondary = YellowSecondaryLight,
+    onSecondary = DarkText,
+
+    background = LightBackground,
+    onBackground = DarkText,
+
+    surface = White,
+    onSurface = DarkText
 )
+
 
 @Composable
 fun AppOxxoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, //si es true Android 12+ ignorará tus colores rojo/amarillo y usará colores dinámicos del sistema.
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
