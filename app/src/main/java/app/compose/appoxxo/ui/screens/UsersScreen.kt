@@ -18,6 +18,8 @@ import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.User
 import app.compose.appoxxo.data.model.UserRole
 import app.compose.appoxxo.data.util.UiState
+import app.compose.appoxxo.ui.components.AppConfirmDialog
+import app.compose.appoxxo.ui.components.AppEmptyState
 import app.compose.appoxxo.viewmodel.UserViewModel
 
 
@@ -27,25 +29,19 @@ fun UsersScreen(viewModel: UserViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var userToDelete by remember { mutableStateOf<User?>(null) }
+    val userToDelete = remember { mutableStateOf<User?>(null) }
 
-    // Diálogo de confirmación de eliminación
-    userToDelete?.let { user ->
-        AlertDialog(
-            onDismissRequest = { userToDelete = null },
-            title = { Text("Eliminar usuario") },
-            text = { Text("¿Estás seguro que deseas eliminar a ${user.name}?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteUser(user.uid)
-                    userToDelete = null
-                }) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
-                }
+    val userToDeleteSnapshot = userToDelete.value
+    if (userToDeleteSnapshot != null) {
+        AppConfirmDialog(
+            title        = "Eliminar usuario",
+            message      = "¿Estás seguro que deseas eliminar a ${userToDeleteSnapshot.name}?",
+            confirmLabel = "Eliminar",
+            onConfirm    = {
+                viewModel.deleteUser(userToDeleteSnapshot.uid)
+                userToDelete.value = null
             },
-            dismissButton = {
-                TextButton(onClick = { userToDelete = null }) { Text("Cancelar") }
-            }
+            onDismiss    = { userToDelete.value = null }
         )
     }
 
@@ -66,38 +62,38 @@ fun UsersScreen(viewModel: UserViewModel) {
             }
 
             users.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) { Text("No hay usuarios registrados") }
+                AppEmptyState(
+                    iconRes  = R.drawable.ic_person,
+                    title    = "Sin usuarios registrados",
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             else -> {
                 LazyColumn(
                     contentPadding = PaddingValues(
-                        top = padding.calculateTopPadding() + 8.dp,
+                        top    = padding.calculateTopPadding() + 8.dp,
                         bottom = padding.calculateBottomPadding() + 16.dp,
-                        start = 16.dp,
-                        end = 16.dp
+                        start  = 16.dp,
+                        end    = 16.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Contador de usuarios
                     item {
                         Text(
                             "${users.size} usuario${if (users.size != 1) "s" else ""} registrados",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style    = MaterialTheme.typography.labelLarge,
+                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
 
                     items(users, key = { it.uid }) { user ->
                         UserCard(
-                            user = user,
-                            isLoading = uiState is UiState.Loading,
+                            user         = user,
+                            isLoading    = uiState is UiState.Loading,
                             onRoleChange = { newRole -> viewModel.updateRole(user.uid, newRole) },
-                            onDelete = { userToDelete = user }
+                            onDelete     = { userToDelete.value = user }
                         )
                     }
                 }
@@ -105,7 +101,6 @@ fun UsersScreen(viewModel: UserViewModel) {
         }
     }
 }
-
 @Composable
 private fun UserCard(
     user: User,

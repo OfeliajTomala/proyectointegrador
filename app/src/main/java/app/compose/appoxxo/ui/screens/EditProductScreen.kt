@@ -1,5 +1,6 @@
 package app.compose.appoxxo.ui.screens
 
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -8,12 +9,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.compose.appoxxo.R
 import app.compose.appoxxo.data.util.UiState
 import app.compose.appoxxo.ui.components.AppButton
 import app.compose.appoxxo.ui.components.AppTextField
+import app.compose.appoxxo.ui.components.ImagePickerSection
 import app.compose.appoxxo.viewmodel.ProductViewModel
-import app.compose.appoxxo.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,20 +26,21 @@ fun EditProductScreen(
     onProductUpdated: () -> Unit
 ) {
     val products by viewModel.products.collectAsState()
-    val product = products.find { it.id == productId }
+    val product   = products.find { it.id == productId }
 
-    var name by remember(product) { mutableStateOf(product?.name ?: "") }
-    var code by remember(product) { mutableStateOf(product?.codigo ?: "") }
-    var price by remember(product) { mutableStateOf(product?.price?.toString() ?: "") }
-    var stock by remember(product) { mutableStateOf(product?.stock?.toString() ?: "") }
+    var name     by remember(product) { mutableStateOf(product?.name ?: "") }
+    var code     by remember(product) { mutableStateOf(product?.codigo ?: "") }
+    var price    by remember(product) { mutableStateOf(product?.price?.toString() ?: "") }
+    var stock    by remember(product) { mutableStateOf(product?.stock?.toString() ?: "") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    val uiState by viewModel.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val uiState           by viewModel.uiState.collectAsState()
+    val snackbarHostState  = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState) {
         when (uiState) {
             is UiState.Success -> { viewModel.resetState(); onProductUpdated() }
-            is UiState.Error -> {
+            is UiState.Error   -> {
                 snackbarHostState.showSnackbar((uiState as UiState.Error).message)
                 viewModel.resetState()
             }
@@ -47,7 +51,7 @@ fun EditProductScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Editar producto") },
+                title = { Text("Editar producto", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onProductUpdated) {
                         Icon(
@@ -55,25 +59,47 @@ fun EditProductScreen(
                             contentDescription = "Volver"
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         if (product == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
             return@Scaffold
         }
+
         Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+
+            // ── Imagen ────────────────────────────────────────────
+            ImagePickerSection(
+                currentImageUrl = product.imageUrl,
+                selectedUri     = imageUri,
+                onImageSelected = { imageUri = it }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+            Text(
+                "Información del producto",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             AppTextField(value = name, onValueChange = { name = it }, label = "Nombre del producto")
             AppTextField(
                 value = code, onValueChange = { code = it },
@@ -89,27 +115,33 @@ fun EditProductScreen(
                 isError = stock.isNotEmpty() && stock.toIntOrNull() == null,
                 errorMessage = "Ingresa un número entero"
             )
-            Spacer(modifier = Modifier.height(8.dp))
+
+            Spacer(modifier = Modifier.height(4.dp))
+
             val isFormValid = name.isNotBlank()
                     && price.toDoubleOrNull() != null
                     && stock.toIntOrNull() != null
+
             AppButton(
-                text = "Actualizar producto",
+                text = if (imageUri != null) "Actualizar con nueva imagen" else "Actualizar producto",
                 onClick = {
                     viewModel.updateProduct(
-                        product.copy(
-                            name = name.trim(),
+                        product = product.copy(
+                            name   = name.trim(),
                             codigo = code.trim(),
-                            price = price.toDouble(),
-                            stock = stock.toInt()
-                        )
+                            price  = price.toDouble(),
+                            stock  = stock.toInt()
+                        ),
+                        imageUri = imageUri
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier       = Modifier.fillMaxWidth(),
                 containerColor = MaterialTheme.colorScheme.primary,
-                enabled = isFormValid,
-                isLoading = uiState is UiState.Loading
+                enabled        = isFormValid,
+                isLoading      = uiState is UiState.Loading
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

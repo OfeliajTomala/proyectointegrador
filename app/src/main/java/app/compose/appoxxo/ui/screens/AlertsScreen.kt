@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.compose.appoxxo.viewmodel.ProductViewModel
 import app.compose.appoxxo.R
+import app.compose.appoxxo.ui.components.AppEmptyState
 
 @Composable
 fun AlertsScreen(viewModel: ProductViewModel) {
@@ -84,30 +85,11 @@ fun AlertsScreen(viewModel: ProductViewModel) {
 
         if (lowStockProducts.isEmpty()) {
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(24.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_check_circle),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Text(
-                            "¡Todo en orden! Ningún producto tiene stock bajo.",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                }
+                AppEmptyState(
+                    iconRes  = R.drawable.ic_check_circle,
+                    title    = "¡Todo en orden!",
+                    subtitle = "Ningún producto tiene stock bajo."
+                )
             }
         } else {
             item {

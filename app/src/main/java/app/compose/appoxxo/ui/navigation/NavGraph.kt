@@ -1,7 +1,6 @@
 package app.compose.appoxxo.ui.navigation
 
 
-
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,7 +22,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import app.compose.appoxxo.R
-import app.compose.appoxxo.data.ServiceLocator
 import app.compose.appoxxo.data.model.UserRole
 import app.compose.appoxxo.ui.screens.AddProductScreen
 import app.compose.appoxxo.ui.screens.AlertsScreen
@@ -44,50 +42,69 @@ import app.compose.appoxxo.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
 
 
+// Rutas que no muestran Scaffold (TopBar / BottomBar / Drawer)
 private val fullScreenRoutes = listOf(
     NavItem.Login.route,
     NavItem.Register.route
 )
 
-// Ítems del drawer con sus rutas e iconos
+// Modelo interno para los ítems del drawer lateral
 private data class DrawerItem(
     val navItem: NavItem,
     val label: String,
     val iconRes: Int,
-    val adminOnly: Boolean = false
+    val adminOnly: Boolean = false  // si true, solo visible para rol ADMIN
 )
 
+// Ítems del drawer — "Usuarios" solo aparece si el usuario es ADMIN
 private val drawerItems = listOf(
-    DrawerItem(NavItem.Dashboard,  "Dashboard",    R.drawable.ic_home),
-    DrawerItem(NavItem.Movements,  "Movimientos",  R.drawable.ic_list),
-    DrawerItem(NavItem.Alerts,     "Alertas",      R.drawable.ic_notifications),
-    DrawerItem(NavItem.Users,      "Usuarios",     R.drawable.ic_person, adminOnly = true)
+    DrawerItem(NavItem.Dashboard, "Dashboard",   R.drawable.ic_home),
+    DrawerItem(NavItem.Movements, "Movimientos", R.drawable.ic_list),
+    DrawerItem(NavItem.Alerts,    "Alertas",     R.drawable.ic_notifications),
+    DrawerItem(NavItem.Users,     "Usuarios",    R.drawable.ic_person, adminOnly = true)
 )
 
+// ─── Punto de entrada principal ──────────────────────────────────
+// authViewModel y onGoogleSignIn se reciben desde MainActivity
+// para mantener la lógica de Google Sign-In fuera del composable
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    authViewModel: AuthViewModel,
+    onGoogleSignIn: () -> Unit
+) {
     val navController = rememberNavController()
-    NavGraph(navController = navController)
+    NavGraph(
+        navController = navController,
+        authViewModel = authViewModel,
+        onGoogleSignIn = onGoogleSignIn
+    )
 }
 
+// ─── Grafo de navegación ─────────────────────────────────────────
+// Gestiona el Scaffold global (TopBar, BottomBar, Drawer) y el NavHost
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavGraph(navController: NavHostController) {
-
+fun NavGraph(
+    navController: NavHostController,
+    authViewModel: AuthViewModel,
+    onGoogleSignIn: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val factory = AppViewModelFactory(
-        authRepository = ServiceLocator.authRepository,
-        productRepository = ServiceLocator.productRepository
+        context = context.applicationContext
     )
 
-    val authViewModel: AuthViewModel = viewModel(factory = factory)
-    val productViewModel: ProductViewModel = viewModel(factory = factory)
+    val productViewModel: ProductViewModel  = viewModel(factory = factory)
     val dashboardViewModel: DashboardViewModel = viewModel(factory = factory)
-    val userViewModel: UserViewModel = viewModel(factory = factory)
+    val userViewModel: UserViewModel        = viewModel(factory = factory)
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    // Ocultar Scaffold en pantallas de autenticación
     val showScaffold = currentRoute !in fullScreenRoutes
 
+    // Determinar si el usuario actual tiene rol ADMIN para mostrar "Usuarios" en el drawer
     val currentUser by authViewModel.currentUser.collectAsState()
     val isAdmin = currentUser?.role == UserRole.ADMIN
 
@@ -97,7 +114,6 @@ fun NavGraph(navController: NavHostController) {
     if (showScaffold) {
         ModalNavigationDrawer(
             drawerState = drawerState,
-            // El drawer NO tapa el contenido — se desplaza junto con él
             gesturesEnabled = true,
             drawerContent = {
                 AppDrawerContent(
@@ -138,22 +154,27 @@ fun NavGraph(navController: NavHostController) {
                     productViewModel = productViewModel,
                     dashboardViewModel = dashboardViewModel,
                     userViewModel = userViewModel,
+                    onGoogleSignIn = onGoogleSignIn,
                     modifier = Modifier.padding(innerPadding)
                 )
             }
         }
     } else {
+        // Sin Scaffold: pantallas de Login y Register ocupan toda la pantalla
         AppNavHost(
             navController = navController,
             authViewModel = authViewModel,
             productViewModel = productViewModel,
             dashboardViewModel = dashboardViewModel,
-            userViewModel = userViewModel
+            userViewModel = userViewModel,
+            onGoogleSignIn = onGoogleSignIn
         )
     }
 }
 
-// ─── TopBar: solo título + botón hamburguesa ─────────────────────
+// ─── TopBar ───────────────────────────────────────────────────────
+// Muestra el título de la pantalla actual y el botón hamburguesa
+// que abre el drawer lateral
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppTopBar(
@@ -161,18 +182,17 @@ private fun AppTopBar(
     onMenuClick: () -> Unit
 ) {
     val title = when {
-        currentRoute == NavItem.Dashboard.route              -> "Dashboard"
-        currentRoute == NavItem.ProductList.route            -> "Productos"
-        currentRoute == NavItem.AddProduct.route             -> "Agregar Producto"
-        currentRoute?.startsWith("edit_product") == true    -> "Editar Producto"
-        currentRoute == NavItem.Movements.route              -> "Movimientos"
-        currentRoute?.startsWith("movements/") == true      -> "Movimientos"
-        currentRoute == NavItem.Alerts.route                 -> "Alertas"
-        currentRoute == NavItem.Profile.route                -> "Perfil"
-        currentRoute == NavItem.Users.route                  -> "Usuarios"
-        else                                                 -> "Inventario"
+        currentRoute == NavItem.Dashboard.route                    -> "Dashboard"
+        currentRoute == NavItem.ProductList.route                  -> "Productos"
+        currentRoute == NavItem.AddProduct.route                   -> "Agregar Producto"
+        currentRoute?.startsWith("edit_product")    == true        -> "Editar Producto"
+        currentRoute == NavItem.Movements.route                    -> "Movimientos"
+        currentRoute?.startsWith("movement_detail") == true        -> "Movimientos"
+        currentRoute == NavItem.Alerts.route                       -> "Alertas"
+        currentRoute == NavItem.Profile.route                      -> "Perfil"
+        currentRoute == NavItem.Users.route                        -> "Usuarios"
+        else                                                       -> "Inventario"
     }
-
     TopAppBar(
         title = { Text(text = title, style = MaterialTheme.typography.titleLarge) },
         navigationIcon = {
@@ -189,7 +209,9 @@ private fun AppTopBar(
     )
 }
 
-// ─── Contenido del Drawer ────────────────────────────────────────
+// ─── Drawer lateral ───────────────────────────────────────────────
+// Contiene los ítems de navegación principal y el botón de cerrar sesión
+// El ítem "Usuarios" solo se muestra si isAdmin == true
 @Composable
 private fun AppDrawerContent(
     currentRoute: String?,
@@ -201,20 +223,17 @@ private fun AppDrawerContent(
         drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
     ) {
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Título del drawer
         Text(
             text = "Inventario",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
-
         Spacer(modifier = Modifier.height(8.dp))
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Ítems de navegación
+        // Filtrar ítems según el rol del usuario
         drawerItems
             .filter { !it.adminOnly || isAdmin }
             .forEach { item ->
@@ -226,7 +245,12 @@ private fun AppDrawerContent(
                             contentDescription = item.label
                         )
                     },
-                    label = { Text(item.label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
+                    label = {
+                        Text(
+                            item.label,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
                     selected = selected,
                     onClick = { onNavigate(item.navItem.route) },
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -237,7 +261,7 @@ private fun AppDrawerContent(
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Botón cerrar sesión al fondo del drawer
+        // Botón de cerrar sesión fijo al fondo del drawer
         NavigationDrawerItem(
             icon = {
                 Icon(
@@ -257,12 +281,12 @@ private fun AppDrawerContent(
             onClick = onLogout,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
-
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
-// ─── Bottom Bar ──────────────────────────────────────────────────
+// ─── Bottom Navigation Bar ────────────────────────────────────────
+// Navegación rápida entre las secciones principales de la app
 @Composable
 private fun AppBottomBar(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -293,7 +317,8 @@ private fun AppBottomBar(navController: NavHostController) {
     }
 }
 
-// ─── NavHost ─────────────────────────────────────────────────────
+// ─── NavHost ──────────────────────────────────────────────────────
+// Define todas las rutas y sus composables correspondientes
 @Composable
 private fun AppNavHost(
     navController: NavHostController,
@@ -301,6 +326,7 @@ private fun AppNavHost(
     productViewModel: ProductViewModel,
     dashboardViewModel: DashboardViewModel,
     userViewModel: UserViewModel,
+    onGoogleSignIn: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -316,18 +342,20 @@ private fun AppNavHost(
                         popUpTo(NavItem.Login.route) { inclusive = true }
                     }
                 },
-                onGoToRegister = { navController.navigate(NavItem.Register.route) }
+                onGoToRegister = { navController.navigate(NavItem.Register.route) },
+                onGoogleSignIn = onGoogleSignIn
             )
         }
         composable(NavItem.Register.route) {
             RegisterScreen(
                 viewModel = authViewModel,
                 onRegisterSuccess = {
-                    navController.navigate(NavItem.Login.route) {
-                        popUpTo(NavItem.Register.route) { inclusive = true }
+                    navController.navigate(NavItem.Dashboard.route) {
+                        popUpTo(0) { inclusive = true }
                     }
                 },
-                onGoToLogin = { navController.popBackStack() }
+                onGoToLogin = { navController.popBackStack() },
+                onGoogleSignIn = onGoogleSignIn
             )
         }
         composable(NavItem.Dashboard.route) {
@@ -340,13 +368,10 @@ private fun AppNavHost(
         composable(NavItem.ProductList.route) {
             ProductListScreen(
                 viewModel = productViewModel,
+                authViewModel = authViewModel, // ← fix
                 onAddProduct = { navController.navigate(NavItem.AddProduct.route) },
-                onEditProduct = { productId ->
-                    navController.navigate(NavItem.EditProduct.createRoute(productId))
-                },
-                onViewMovements = { productId ->
-                    navController.navigate(NavItem.MovementDetail.createRoute(productId))
-                }
+                onEditProduct = { navController.navigate(NavItem.EditProduct.createRoute(it)) },
+                onViewMovements = { navController.navigate(NavItem.MovementDetail.createRoute(it)) }
             )
         }
         composable(NavItem.AddProduct.route) {

@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-
     id("com.google.gms.google-services")
 }
 
@@ -19,6 +18,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        //supabase
+        val supabaseUrl = project.findProperty("SUPABASE_URL")?.toString() ?: ""
+        val supabaseKey = project.findProperty("SUPABASE_KEY")?.toString() ?: ""
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
+
     }
 
     buildTypes {
@@ -35,6 +42,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -80,5 +88,15 @@ dependencies {
     implementation(libs.coil.compose)
 
 
+    implementation(platform(libs.firebase.bom))
 
+
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+
+    //supabase
+    implementation(libs.supabase.kt)
+    implementation(libs.storage.kt)
+    implementation(libs.ktor.client.android) // motor HTTP requerido por Supabase
 }

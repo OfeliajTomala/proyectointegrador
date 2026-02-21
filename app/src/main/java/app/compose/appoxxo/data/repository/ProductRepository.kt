@@ -9,23 +9,28 @@ import kotlinx.coroutines.tasks.await
 
 class ProductRepository {
 
-    private val db = FirebaseFirestore.getInstance()
-    private val productRef = db.collection("products")
+    private val db          = FirebaseFirestore.getInstance()
+    private val productRef  = db.collection("products")
     private val movementRef = db.collection("movements")
 
     // ─── Productos ───────────────────────────────────────────────
 
-    suspend fun getProducts(): List<Product> {
-        return productRef.get().await().toObjects(Product::class.java)
-    }
+    suspend fun getProducts(): List<Product> =
+        productRef.get().await().toObjects(Product::class.java)
 
-    suspend fun getProductById(id: String): Product? {
-        return productRef.document(id).get().await().toObject(Product::class.java)
-    }
+    suspend fun getProductById(id: String): Product? =
+        productRef.document(id).get().await().toObject(Product::class.java)
 
-    suspend fun addProduct(product: Product) {
+    /** Crea el documento y devuelve el ID generado por Firestore */
+    suspend fun addProductAndGetId(product: Product): String {
         val doc = productRef.document()
         productRef.document(doc.id).set(product.copy(id = doc.id)).await()
+        return doc.id
+    }
+
+    /** Compatibilidad hacia atrás */
+    suspend fun addProduct(product: Product) {
+        addProductAndGetId(product)
     }
 
     suspend fun updateProduct(product: Product) {
@@ -42,7 +47,7 @@ class ProductRepository {
         val doc = movementRef.document()
         movementRef.document(doc.id).set(movement.copy(id = doc.id)).await()
 
-        val product = getProductById(movement.productId) ?: return
+        val product  = getProductById(movement.productId) ?: return
         val newStock = when (movement.type) {
             MovementType.ENTRADA -> product.stock + movement.quantity
             MovementType.SALIDA  -> (product.stock - movement.quantity).coerceAtLeast(0)
@@ -50,12 +55,18 @@ class ProductRepository {
         productRef.document(movement.productId).update("stock", newStock).await()
     }
 
-    suspend fun getMovementsForProduct(productId: String): List<Movement> {
-        return movementRef
+    suspend fun getMovementsForProduct(productId: String): List<Movement> =
+        movementRef
             .whereEqualTo("productId", productId)
             .orderBy("date", Query.Direction.DESCENDING)
             .get()
             .await()
             .toObjects(Movement::class.java)
-    }
+
+    suspend fun getAllMovements(): List<Movement> =
+        movementRef
+            .orderBy("date", Query.Direction.DESCENDING)
+            .get()
+            .await()
+            .toObjects(Movement::class.java)
 }

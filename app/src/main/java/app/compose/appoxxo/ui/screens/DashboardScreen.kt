@@ -16,8 +16,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.compose.appoxxo.R
+import app.compose.appoxxo.ui.components.AppSectionCard
+import app.compose.appoxxo.ui.components.AppStatCard
 import app.compose.appoxxo.viewmodel.DashboardViewModel
-
 
 @Composable
 fun DashboardScreen(
@@ -28,165 +29,157 @@ fun DashboardScreen(
     val stats by viewModel.stats.collectAsState()
 
     LazyColumn(
-        modifier = Modifier
+        modifier            = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding      = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        // ─── Card: Estadísticas generales ────────────────────────
+        // ─── Estadísticas generales ───────────────────────────────
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            AppSectionCard(
+                title    = "Resumen General",
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Resumen General",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        StatItem(
-                            modifier = Modifier.weight(1f),
-                            iconRes = R.drawable.ic_inventory,
-                            label = "Total Productos",
-                            value = stats.totalProducts.toString(),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        StatItem(
-                            modifier = Modifier.weight(1f),
-                            iconRes = R.drawable.ic_layers,
-                            label = "Stock Total",
-                            value = stats.totalStock.toString(),
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        StatItem(
-                            modifier = Modifier.weight(1f),
-                            iconRes = R.drawable.ic_warning,
-                            label = "Stock Bajo",
-                            value = stats.lowStockCount.toString(),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        StatItem(
-                            modifier = Modifier.weight(1f),
-                            iconRes = R.drawable.ic_attach_money,
-                            label = "Valor Inventario",
-                            value = "$${"%.0f".format(stats.totalInventoryValue)}",
-                            color = Color(0xFF2E7D32)
-                        )
-                    }
-                }
-            }
-        }
-
-        // ─── Card: Productos con stock bajo ──────────────────────
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    AppStatCard(
+                        title       = "Total Productos",
+                        value       = stats.totalProducts.toString(),
+                        modifier    = Modifier.weight(1f),
+                        accentColor = MaterialTheme.colorScheme.primary,
+                        icon = {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_warning),
+                                painter           = painterResource(R.drawable.ic_inventory),
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Productos con Bajo Stock",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                tint              = MaterialTheme.colorScheme.primary,
+                                modifier          = Modifier.size(20.dp)
                             )
                         }
-                        TextButton(onClick = onNavigateToAlerts) {
-                            Text("Ver todos")
+                    )
+                    AppStatCard(
+                        title       = "Stock Total",
+                        value       = stats.totalStock.toString(),
+                        modifier    = Modifier.weight(1f),
+                        accentColor = MaterialTheme.colorScheme.tertiary,
+                        icon = {
+                            Icon(
+                                painter           = painterResource(R.drawable.ic_layers),
+                                contentDescription = null,
+                                tint              = MaterialTheme.colorScheme.tertiary,
+                                modifier          = Modifier.size(20.dp)
+                            )
                         }
-                    }
+                    )
+                }
 
-                    if (stats.lowStockProducts.isEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            "✅ Todos los productos tienen stock suficiente",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        stats.lowStockProducts.take(3).forEach { product ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    AppStatCard(
+                        title       = "Stock Bajo",
+                        value       = stats.lowStockCount.toString(),
+                        modifier    = Modifier.weight(1f),
+                        accentColor = MaterialTheme.colorScheme.error,
+                        icon = {
+                            Icon(
+                                painter           = painterResource(R.drawable.ic_warning),
+                                contentDescription = null,
+                                tint              = MaterialTheme.colorScheme.error,
+                                modifier          = Modifier.size(20.dp)
+                            )
+                        }
+                    )
+                    AppStatCard(
+                        title       = "Valor Inventario",
+                        value       = "$${"%.0f".format(stats.totalInventoryValue)}",
+                        modifier    = Modifier.weight(1f),
+                        accentColor = Color(0xFF2E7D32),
+                        icon = {
+                            Icon(
+                                painter           = painterResource(R.drawable.ic_attach_money),
+                                contentDescription = null,
+                                tint              = Color(0xFF2E7D32),
+                                modifier          = Modifier.size(20.dp)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        // ─── Productos con stock bajo ─────────────────────────────
+        item {
+            AppSectionCard(
+                title    = "Productos con Bajo Stock",
+                modifier = Modifier.fillMaxWidth(),
+                trailing = {
+                    TextButton(onClick = onNavigateToAlerts) { Text("Ver todos") }
+                }
+            ) {
+                if (stats.lowStockProducts.isEmpty()) {
+                    Text(
+                        "Todos los productos tienen stock suficiente",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    val preview = stats.lowStockProducts.take(3)
+                    preview.forEachIndexed { index, product ->
+                        Row(
+                            modifier              = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                product.name,
+                                style    = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Badge(containerColor = MaterialTheme.colorScheme.error) {
                                 Text(
-                                    product.name,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.weight(1f)
+                                    "${product.stock} uds",
+                                    modifier = Modifier.padding(horizontal = 6.dp)
                                 )
-                                Badge(containerColor = MaterialTheme.colorScheme.error) {
-                                    Text(
-                                        "${product.stock} uds",
-                                        modifier = Modifier.padding(horizontal = 6.dp)
-                                    )
-                                }
                             }
-                            if (product != stats.lowStockProducts.take(3).last()) {
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-                            }
+                        }
+                        if (index < preview.lastIndex) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
                         }
                     }
                 }
             }
         }
 
-        // ─── Sección: Productos recientes ────────────────────────
+        // ─── Header: Productos recientes ──────────────────────────
         item {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment     = Alignment.CenterVertically
             ) {
                 Text(
                     "Productos Recientes",
-                    style = MaterialTheme.typography.titleMedium,
+                    style      = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                TextButton(onClick = onNavigateToProducts) {
-                    Text("Ver todos")
-                }
+                TextButton(onClick = onNavigateToProducts) { Text("Ver todos") }
             }
         }
 
+        // ─── Lista: Productos recientes ───────────────────────────
         if (stats.recentProducts.isEmpty()) {
             item {
                 Box(
-                    modifier = Modifier
+                    modifier         = Modifier
                         .fillMaxWidth()
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
@@ -201,37 +194,41 @@ fun DashboardScreen(
         } else {
             items(stats.recentProducts) { product ->
                 Card(
-                    modifier = Modifier
+                    modifier  = Modifier
                         .fillMaxWidth()
                         .clickable { onNavigateToProducts() },
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    shape     = RoundedCornerShape(14.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    border    = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                    )
                 ) {
                     Row(
-                        modifier = Modifier
+                        modifier          = Modifier
                             .fillMaxWidth()
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            modifier = Modifier
+                            modifier         = Modifier
                                 .size(48.dp)
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.primaryContainer),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_inventory),
+                                painter           = painterResource(id = R.drawable.ic_inventory),
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
+                                tint              = MaterialTheme.colorScheme.primary,
+                                modifier          = Modifier.size(24.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 product.name,
-                                style = MaterialTheme.typography.bodyLarge,
+                                style      = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
@@ -243,9 +240,9 @@ fun DashboardScreen(
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
                                 "$${"%.2f".format(product.price)}",
-                                style = MaterialTheme.typography.bodyLarge,
+                                style      = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color      = MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 "Stock: ${product.stock}",
@@ -259,45 +256,6 @@ fun DashboardScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun StatItem(
-    modifier: Modifier = Modifier,
-    iconRes: Int,
-    label: String,
-    value: String,
-    color: Color
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(22.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                value,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
