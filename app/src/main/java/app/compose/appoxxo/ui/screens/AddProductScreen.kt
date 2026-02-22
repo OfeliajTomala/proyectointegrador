@@ -3,20 +3,19 @@ package app.compose.appoxxo.ui.screens
 import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.Product
 import app.compose.appoxxo.data.util.UiState
-import app.compose.appoxxo.ui.components.AppButton
-import app.compose.appoxxo.ui.components.AppTextField
-import app.compose.appoxxo.ui.components.ImagePickerSection
+import app.compose.appoxxo.ui.components.*
 import app.compose.appoxxo.viewmodel.ProductViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,8 +30,28 @@ fun AddProductScreen(
     var stock    by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    val uiState          by viewModel.uiState.collectAsState()
+    val uiState           by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // ── Validación y parseo de precio ─────────────────────────────
+    fun isValidPrice(value: String): Boolean {
+        if (value.isEmpty()) return true
+        // Permite números enteros, decimales con 1-2 cifras o iniciar con punto (como ".5")
+        return value.matches(Regex("""^(\d{1,10}|\d{0,10}\.\d{1,2}|\.\d{1,2})$"""))
+    }
+
+    fun parsePrice(value: String): Double {
+        return when {
+            value.isEmpty()        -> 0.0
+            value.startsWith(".")  -> ("0$value").toDouble()
+            else                   -> value.toDouble()
+        }
+    }
+
+    fun isValidStock(value: String): Boolean {
+        if (value.isEmpty()) return true
+        return value.matches(Regex("""^\d+$"""))
+    }
 
     LaunchedEffect(uiState) {
         when (uiState) {
@@ -48,15 +67,10 @@ fun AddProductScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text("Agregar producto", fontWeight = FontWeight.Bold)
-                },
+                title = { Text("Agregar producto", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onProductSaved) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_back),
-                            contentDescription = "Volver"
-                        )
+                        Icon(painterResource(id = R.drawable.ic_arrow_back), "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -74,63 +88,68 @@ fun AddProductScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-
-            // ── Imagen ────────────────────────────────────────────
+            // ── Imagen (opcional) ─────────────────────────────────
             ImagePickerSection(
-                selectedUri   = imageUri,
+                selectedUri     = imageUri,
                 onImageSelected = { imageUri = it }
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-            // ── Datos del producto ────────────────────────────────
             Text(
                 "Información del producto",
-                style = MaterialTheme.typography.labelLarge,
+                style      = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color      = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             AppTextField(
-                value = name,
+                value         = name,
                 onValueChange = { name = it },
-                label = "Nombre del producto"
+                label         = "Nombre del producto"
             )
+
             AppTextField(
                 value         = code,
                 onValueChange = { code = it },
                 label         = "Código",
                 singleLine    = false
             )
+
+            // Precio — teclado numérico decimal
             AppTextField(
                 value         = price,
-                onValueChange = { price = it },
+                onValueChange = { if (isValidPrice(it)) price = it },
                 label         = "Precio",
-                isError       = price.isNotEmpty() && price.toDoubleOrNull() == null,
-                errorMessage  = "Ingresa un número válido"
+                isError       = price.isNotEmpty() && parsePrice(price) < 0,
+                errorMessage  = "Ingresa un precio válido",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
+
+            // Stock — teclado numérico entero
             AppTextField(
                 value         = stock,
-                onValueChange = { stock = it },
+                onValueChange = { if (isValidStock(it)) stock = it },
                 label         = "Stock inicial",
                 isError       = stock.isNotEmpty() && stock.toIntOrNull() == null,
-                errorMessage  = "Ingresa un número entero"
+                errorMessage  = "Ingresa un número entero",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             val isFormValid = name.isNotBlank()
-                    && price.toDoubleOrNull() != null
+                    && parsePrice(price) >= 0
                     && stock.toIntOrNull() != null
 
             AppButton(
-                text           = if (imageUri != null) "Guardar y subir imagen" else "Guardar producto",
+                text           = "Guardar producto",
                 onClick        = {
                     viewModel.addProduct(
                         product  = Product(
                             name   = name.trim(),
                             codigo = code.trim(),
-                            price  = price.toDouble(),
+                            price  = parsePrice(price),
                             stock  = stock.toInt()
                         ),
                         imageUri = imageUri
@@ -141,34 +160,6 @@ fun AddProductScreen(
                 enabled        = isFormValid,
                 isLoading      = uiState is UiState.Loading
             )
-
-            // Nota sobre almacenamiento
-            if (imageUri != null) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                    ),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_inventory),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            "La imagen se subirá a Firebase Storage. " +
-                                    "El enlace se guardará en Realtime Database.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
 
             Spacer(modifier = Modifier.height(16.dp))
         }

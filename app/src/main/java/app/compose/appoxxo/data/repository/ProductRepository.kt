@@ -21,19 +21,37 @@ class ProductRepository {
     suspend fun getProductById(id: String): Product? =
         productRef.document(id).get().await().toObject(Product::class.java)
 
-    /** Crea el documento y devuelve el ID generado por Firestore */
+    suspend fun validateUniqueFields(
+        name: String,
+        codigo: String,
+        excludeId: String = ""
+    ): String? {
+        val products = getProducts()
+        val nameTaken = products.any {
+            it.name.trim().equals(name.trim(), ignoreCase = true) && it.id != excludeId
+        }
+        if (nameTaken) return "Ya existe un producto con ese nombre"
+
+        if (codigo.isNotBlank()) {
+            val codigoTaken = products.any {
+                it.codigo.trim().equals(codigo.trim(), ignoreCase = true) && it.id != excludeId
+            }
+            if (codigoTaken) return "Ya existe un producto con ese código"
+        }
+        return null
+    }
+
     suspend fun addProductAndGetId(product: Product): String {
+        val error = validateUniqueFields(product.name, product.codigo)
+        if (error != null) throw Exception(error)
         val doc = productRef.document()
         productRef.document(doc.id).set(product.copy(id = doc.id)).await()
         return doc.id
     }
 
-    /** Compatibilidad hacia atrás */
-    suspend fun addProduct(product: Product) {
-        addProductAndGetId(product)
-    }
-
     suspend fun updateProduct(product: Product) {
+        val error = validateUniqueFields(product.name, product.codigo, product.id)
+        if (error != null) throw Exception(error)
         productRef.document(product.id).set(product).await()
     }
 
@@ -55,18 +73,29 @@ class ProductRepository {
         productRef.document(movement.productId).update("stock", newStock).await()
     }
 
-    suspend fun getMovementsForProduct(productId: String): List<Movement> =
-        movementRef
-            .whereEqualTo("productId", productId)
-            .orderBy("date", Query.Direction.DESCENDING)
-            .get()
-            .await()
-            .toObjects(Movement::class.java)
+    // Fix — sin orderBy para evitar error de índice compuesto en Firestore
+    suspend fun getMovementsForProduct(productId: String): List<Movement> {
+        return try {
+            movementRef
+                .whereEqualTo("productId", productId)
+                .get()
+                .await()
+                .toObjects(Movement::class.java)
+                .sortedByDescending { it.date.seconds } // ordenamos en memoria
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 
-    suspend fun getAllMovements(): List<Movement> =
-        movementRef
-            .orderBy("date", Query.Direction.DESCENDING)
-            .get()
-            .await()
-            .toObjects(Movement::class.java)
+    suspend fun getAllMovements(): List<Movement> {
+        return try {
+            movementRef
+                .orderBy("date", Query.Direction.DESCENDING)
+                .get()
+                .await()
+                .toObjects(Movement::class.java)
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 }

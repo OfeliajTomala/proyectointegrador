@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.Movement
@@ -522,10 +524,16 @@ fun MovementDetailScreen(
                         }
                         OutlinedTextField(
                             value         = quantity,
-                            onValueChange = { quantity = it },
+                            onValueChange = { value ->
+                                // Solo acepta números enteros positivos
+                                if (value.isEmpty() || value.matches(Regex("^\\d+$"))) {
+                                    quantity = value
+                                }
+                            },
                             label         = { Text("Cantidad") },
                             modifier      = Modifier.fillMaxWidth(),
                             shape         = RoundedCornerShape(12.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             isError       = quantity.isNotEmpty() && quantity.toIntOrNull() == null,
                             supportingText = if (quantity.isNotEmpty() && quantity.toIntOrNull() == null) {
                                 { Text("Ingresa un número entero") }

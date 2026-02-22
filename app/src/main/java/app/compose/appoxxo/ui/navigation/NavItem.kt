@@ -4,16 +4,29 @@ package app.compose.appoxxo.ui.navigation
 import app.compose.appoxxo.R
 
 sealed class NavItem(val route: String) {
+    //Splash
+    object Splash : NavItem("splash")
 
     // ─── Auth ────────────────────────────────────────────────────
     object Login    : NavItem("login")
     object Register : NavItem("register")
+
+    //
+    object AddPassword    : NavItem("add_password")
+
+    object EditName       : NavItem("edit_name")
+    object EditEmail      : NavItem("edit_email")
+    object ChangePassword : NavItem("change_password")
 
     // ─── Bottom Nav ──────────────────────────────────────────────
     object Dashboard   : NavItem("dashboard")
     object ProductList : NavItem("product_list")
     object Alerts      : NavItem("alerts")
     object Profile     : NavItem("profile")
+
+    // ─── Politicas de seguridad y manual de usuario ───────────────────────────────────────────────
+    object Help           : NavItem("help")
+    object SecurityPolicy : NavItem("security_policy")
 
     // ─── Productos ───────────────────────────────────────────────
     object AddProduct : NavItem("add_product")
@@ -46,5 +59,6 @@ val bottomNavItems = listOf(
     BottomNavItem(NavItem.Dashboard,  "Home",        R.drawable.ic_home),
     BottomNavItem(NavItem.ProductList,  "Productos", R.drawable.ic_shopping_cart),
     BottomNavItem(NavItem.Alerts,     "Alertas",     R.drawable.ic_notifications),
+    BottomNavItem(NavItem.Help,        "Ayuda",       R.drawable.ic_help),
     BottomNavItem(NavItem.Profile,    "Perfil",      R.drawable.ic_person)
 )

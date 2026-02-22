@@ -5,5 +5,7 @@ data class User(
     val uid: String = "",
     val email: String = "",
     val name: String = "",
-    val role: UserRole = UserRole.CAJERO
+    val role: UserRole = UserRole.CAJERO,
+    val photoUrl: String = ""
+
 )

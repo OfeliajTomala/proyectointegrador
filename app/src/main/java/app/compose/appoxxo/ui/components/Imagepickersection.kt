@@ -161,7 +161,7 @@ fun ImagePickerSection(
                         .background(MaterialTheme.colorScheme.primary)
                 )
                 Text(
-                    "Imagen lista para subir a Supabase",
+                    "Imagen lista para subir",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium

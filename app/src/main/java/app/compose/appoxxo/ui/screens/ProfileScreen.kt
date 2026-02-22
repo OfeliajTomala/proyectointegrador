@@ -1,15 +1,23 @@
 package app.compose.appoxxo.ui.screens
 
-import androidx.compose.foundation.*
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -20,15 +28,32 @@ import app.compose.appoxxo.ui.components.AppOutlinedButton
 import app.compose.appoxxo.ui.theme.AppPalettes
 import app.compose.appoxxo.ui.theme.ThemeConfig
 import app.compose.appoxxo.viewmodel.AuthViewModel
+import coil.compose.AsyncImage
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun ProfileScreen(
     viewModel: AuthViewModel,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onEditName: () -> Unit,
+    onEditEmail: () -> Unit,
+    onChangePassword: () -> Unit,
+    onAddPassword: () -> Unit,
+    onSecurityPolicy: () -> Unit
 ) {
-    val currentUser      by viewModel.currentUser.collectAsState()
-    val showLogoutDialog = remember { mutableStateOf(false) }
-    val showThemeSheet   = remember { mutableStateOf(false) }
+    val currentUser           by viewModel.currentUser.collectAsState()
+    val showLogoutDialog       = remember { mutableStateOf(false) }
+    val showThemeSheet         = remember { mutableStateOf(false) }
+    val showDeletePhotoDialog  = remember { mutableStateOf(false) }
+
+    // Detecta proveedores activos
+    val firebaseUser      = FirebaseAuth.getInstance().currentUser
+    val hasEmailProvider  = firebaseUser?.providerData?.any { it.providerId == "password" } == true
+    val hasGoogleProvider = firebaseUser?.providerData?.any { it.providerId == "google.com" } == true
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? -> uri?.let { viewModel.updateProfileImage(it) } }
 
     if (showLogoutDialog.value) {
         AppConfirmDialog(
@@ -37,6 +62,16 @@ fun ProfileScreen(
             confirmLabel = "Cerrar sesión",
             onConfirm    = { showLogoutDialog.value = false; onLogout() },
             onDismiss    = { showLogoutDialog.value = false }
+        )
+    }
+
+    if (showDeletePhotoDialog.value) {
+        AppConfirmDialog(
+            title        = "Eliminar foto",
+            message      = "¿Estás seguro que deseas eliminar tu foto de perfil?",
+            confirmLabel = "Eliminar",
+            onConfirm    = { showDeletePhotoDialog.value = false; viewModel.deleteProfileImage() },
+            onDismiss    = { showDeletePhotoDialog.value = false }
         )
     }
 
@@ -54,28 +89,83 @@ fun ProfileScreen(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
 
-        // ── Avatar ────────────────────────────────────────────────
         val roleColor = when (currentUser?.role) {
             UserRole.ADMIN     -> MaterialTheme.colorScheme.error
             UserRole.ENCARGADO -> MaterialTheme.colorScheme.tertiary
             else               -> MaterialTheme.colorScheme.primary
         }
 
+        // ── Avatar ────────────────────────────────────────────────
         Box(
-            modifier = Modifier
-                .size(96.dp)
-                .clip(CircleShape)
-                .background(roleColor.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center
+            modifier         = Modifier.size(100.dp),
+            contentAlignment = Alignment.BottomEnd
         ) {
-            Text(
-                text       = currentUser?.name?.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                style      = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold,
-                color      = roleColor
-            )
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(roleColor.copy(alpha = 0.15f))
+                    .border(2.dp, roleColor.copy(alpha = 0.4f), CircleShape)
+                    .clickable { launcher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                if (currentUser?.photoUrl?.isNotEmpty() == true) {
+                    AsyncImage(
+                        model              = currentUser!!.photoUrl,
+                        contentDescription = "Foto de perfil",
+                        modifier           = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale       = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text       = currentUser?.name?.firstOrNull()
+                            ?.uppercaseChar()?.toString() ?: "?",
+                        style      = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color      = roleColor
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                    .clickable { launcher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter            = painterResource(id = R.drawable.ic_edit),
+                    contentDescription = "Cambiar foto",
+                    tint               = Color.White,
+                    modifier           = Modifier.size(14.dp)
+                )
+            }
         }
 
+        // Botón eliminar foto
+        if (currentUser?.photoUrl?.isNotEmpty() == true) {
+            TextButton(onClick = { showDeletePhotoDialog.value = true }) {
+                Icon(
+                    painter            = painterResource(id = R.drawable.ic_delete),
+                    contentDescription = null,
+                    tint               = MaterialTheme.colorScheme.error,
+                    modifier           = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    "Eliminar foto",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+        }
+
+        // ── Info ──────────────────────────────────────────────────
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 currentUser?.name ?: "Usuario",
@@ -118,10 +208,10 @@ fun ProfileScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    painter           = painterResource(id = R.drawable.ic_notifications),
+                    painter            = painterResource(id = R.drawable.ic_notifications),
                     contentDescription = null,
-                    tint              = MaterialTheme.colorScheme.primary,
-                    modifier          = Modifier.size(24.dp)
+                    tint               = MaterialTheme.colorScheme.primary,
+                    modifier           = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -174,9 +264,9 @@ fun ProfileScreen(
                     )
                 }
                 Icon(
-                    painter           = painterResource(id = R.drawable.ic_chevron_right),
+                    painter            = painterResource(id = R.drawable.ic_chevron_right),
                     contentDescription = null,
-                    tint              = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint               = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -194,35 +284,82 @@ fun ProfileScreen(
             modifier = Modifier.fillMaxWidth(),
             shape    = RoundedCornerShape(16.dp)
         ) {
-            // FIX: uid sin .plus() — string template directo
-            val uidPreview = currentUser?.uid?.let {
-                if (it.length > 12) "${it.take(12)}…" else it
-            } ?: "—"
+            ProfileEditRow(
+                label   = "Nombre",
+                value   = currentUser?.name ?: "—",
+                onClick = onEditName
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            ProfileEditRow(
+                label   = "Correo",
+                value   = currentUser?.email ?: "—",
+                onClick = onEditEmail
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
-            ProfileInfoRow(label = "Nombre", value = currentUser?.name  ?: "—")
+            // Contraseña — según proveedor
+            when {
+                hasEmailProvider -> {
+                    ProfileEditRow(
+                        label   = "Contraseña",
+                        value   = "••••••••",
+                        onClick = onChangePassword
+                    )
+                }
+                hasGoogleProvider && !hasEmailProvider -> {
+                    ProfileEditRow(
+                        label   = "Contraseña",
+                        value   = "Agregar contraseña",
+                        onClick = onAddPassword
+                    )
+                }
+            }
+
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-            ProfileInfoRow(label = "Correo", value = currentUser?.email ?: "—")
+
+            // Rol — no editable
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Rol",
+                    style      = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier   = Modifier.width(90.dp)
+                )
+                Text(
+                    currentUser?.role?.name ?: "—",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-            ProfileInfoRow(label = "Rol",    value = currentUser?.role?.name ?: "—")
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-            ProfileInfoRow(label = "UID",    value = uidPreview)
+
+            // Políticas de seguridad
+            ProfileEditRow(
+                label   = "Políticas",
+                value   = "Políticas de seguridad",
+                onClick = onSecurityPolicy
+            )
         }
 
-        // FIX: Spacer sin weight — dentro de Column con spacedBy weight no funciona
         Spacer(modifier = Modifier.height(8.dp))
 
-        // ── Cerrar sesión ─────────────────────────────────────────
         AppOutlinedButton(
             text     = "Cerrar sesión",
             onClick  = { showLogoutDialog.value = true },
             modifier = Modifier.fillMaxWidth(),
             color    = MaterialTheme.colorScheme.error,
             leadingIcon = {
-                // FIX: tint explícito para que coincida con el color del botón
                 Icon(
-                    painter           = painterResource(id = R.drawable.ic_exittoapp),
+                    painter            = painterResource(id = R.drawable.ic_exittoapp),
                     contentDescription = null,
-                    tint              = MaterialTheme.colorScheme.error
+                    tint               = MaterialTheme.colorScheme.error
                 )
             }
         )
@@ -232,10 +369,11 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileInfoRow(label: String, value: String) {
+private fun ProfileEditRow(label: String, value: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -244,27 +382,31 @@ private fun ProfileInfoRow(label: String, value: String) {
             style      = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color      = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier   = Modifier.width(80.dp)
+            modifier   = Modifier.width(90.dp)
         )
         Text(
             value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            style    = MaterialTheme.typography.bodyMedium,
+            color    = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            painter            = painterResource(id = R.drawable.ic_chevron_right),
+            contentDescription = "Editar",
+            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier           = Modifier.size(18.dp)
         )
     }
 }
 
-// ─── Selector de tema ─────────────────────────────────────────────────────────
 @Composable
 private fun ThemeSelectorDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Paleta de colores", fontWeight = FontWeight.Bold) },
-        text  = {
+        text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 AppPalettes.all.forEach { palette ->
-                    // FIX: comparar por nombre en lugar de referencia para evitar
-                    // problemas si AppColorPalette no implementa equals()
                     val isSelected = ThemeConfig.selectedPalette.name == palette.name
                     Row(
                         modifier = Modifier
@@ -273,8 +415,7 @@ private fun ThemeSelectorDialog(onDismiss: () -> Unit) {
                             .background(
                                 if (isSelected)
                                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                                else
-                                    Color.Transparent
+                                else Color.Transparent
                             )
                             .clickable { ThemeConfig.selectedPalette = palette }
                             .padding(10.dp),
@@ -306,10 +447,10 @@ private fun ThemeSelectorDialog(onDismiss: () -> Unit) {
                         Spacer(modifier = Modifier.weight(1f))
                         if (isSelected) {
                             Icon(
-                                painter           = painterResource(id = R.drawable.ic_check_circle),
+                                painter            = painterResource(id = R.drawable.ic_check_circle),
                                 contentDescription = "Seleccionado",
-                                tint              = MaterialTheme.colorScheme.primary,
-                                modifier          = Modifier.size(20.dp)
+                                tint               = MaterialTheme.colorScheme.primary,
+                                modifier           = Modifier.size(20.dp)
                             )
                         }
                     }

@@ -1,6 +1,5 @@
 package app.compose.appoxxo.ui.screens
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,12 +10,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import app.compose.appoxxo.data.util.UiState
-import app.compose.appoxxo.viewmodel.ProductViewModel
 import app.compose.appoxxo.R
+import app.compose.appoxxo.data.model.UserRole
+import app.compose.appoxxo.data.util.UiState
 import app.compose.appoxxo.ui.components.AppEmptyState
 import app.compose.appoxxo.ui.components.ProductCard
 import app.compose.appoxxo.viewmodel.AuthViewModel
+import app.compose.appoxxo.viewmodel.ProductViewModel
 
 @Composable
 fun ProductListScreen(
@@ -26,10 +26,13 @@ fun ProductListScreen(
     onEditProduct: (String) -> Unit,
     onViewMovements: (String) -> Unit
 ) {
-    val products by viewModel.products.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+    val products    by viewModel.products.collectAsState()
+    val uiState     by viewModel.uiState.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val canAddProduct = currentUser?.role == UserRole.ADMIN
+            || currentUser?.role == UserRole.ENCARGADO
 
     LaunchedEffect(uiState) {
         if (uiState is UiState.Error) {
@@ -40,14 +43,16 @@ fun ProductListScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddProduct,
-                shape   = RoundedCornerShape(16.dp)
-            ) {
-                Icon(
-                    painter            = painterResource(id = R.drawable.ic_add),
-                    contentDescription = "Agregar producto"
-                )
+            if (canAddProduct) {
+                FloatingActionButton(
+                    onClick = onAddProduct,
+                    shape   = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        painter            = painterResource(id = R.drawable.ic_add),
+                        contentDescription = "Agregar producto"
+                    )
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -62,7 +67,7 @@ fun ProductListScreen(
                 AppEmptyState(
                     iconRes  = R.drawable.ic_inventory,
                     title    = "Sin productos aún",
-                    subtitle = "Agrega uno con el botón +",
+                    subtitle = if (canAddProduct) "Agrega uno con el botón +" else "No hay productos registrados",
                     modifier = Modifier.fillMaxSize()
                 )
             }

@@ -26,7 +26,11 @@ fun DashboardScreen(
     onNavigateToProducts: () -> Unit,
     onNavigateToAlerts: () -> Unit
 ) {
-    val stats by viewModel.stats.collectAsState()
+    val stats   by viewModel.stats.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Refresca cada vez que se entra al Dashboard
+    LaunchedEffect(Unit) { viewModel.loadStats() }
 
     LazyColumn(
         modifier            = Modifier
@@ -36,80 +40,109 @@ fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
+        // ─── Header con botón refrescar ───────────────────────────
+        item {
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Resumen General",
+                    style      = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = { viewModel.loadStats() }) {
+                    Icon(
+                        painter            = painterResource(id = R.drawable.ic_swap_vert),
+                        contentDescription = "Actualizar",
+                        tint               = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+
         // ─── Estadísticas generales ───────────────────────────────
         item {
             AppSectionCard(
-                title    = "Resumen General",
+                title    = "",
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    AppStatCard(
-                        title       = "Total Productos",
-                        value       = stats.totalProducts.toString(),
-                        modifier    = Modifier.weight(1f),
-                        accentColor = MaterialTheme.colorScheme.primary,
-                        icon = {
-                            Icon(
-                                painter           = painterResource(R.drawable.ic_inventory),
-                                contentDescription = null,
-                                tint              = MaterialTheme.colorScheme.primary,
-                                modifier          = Modifier.size(20.dp)
-                            )
-                        }
-                    )
-                    AppStatCard(
-                        title       = "Stock Total",
-                        value       = stats.totalStock.toString(),
-                        modifier    = Modifier.weight(1f),
-                        accentColor = MaterialTheme.colorScheme.tertiary,
-                        icon = {
-                            Icon(
-                                painter           = painterResource(R.drawable.ic_layers),
-                                contentDescription = null,
-                                tint              = MaterialTheme.colorScheme.tertiary,
-                                modifier          = Modifier.size(20.dp)
-                            )
-                        }
-                    )
-                }
+                if (uiState is app.compose.appoxxo.data.util.UiState.Loading) {
+                    Box(
+                        modifier         = Modifier.fillMaxWidth().height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) { CircularProgressIndicator() }
+                } else {
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        AppStatCard(
+                            title       = "Total Productos",
+                            value       = stats.totalProducts.toString(),
+                            modifier    = Modifier.weight(1f),
+                            accentColor = MaterialTheme.colorScheme.primary,
+                            icon = {
+                                Icon(
+                                    painter            = painterResource(R.drawable.ic_inventory),
+                                    contentDescription = null,
+                                    tint               = MaterialTheme.colorScheme.primary,
+                                    modifier           = Modifier.size(20.dp)
+                                )
+                            }
+                        )
+                        AppStatCard(
+                            title       = "Stock Total",
+                            value       = stats.totalStock.toString(),
+                            modifier    = Modifier.weight(1f),
+                            accentColor = MaterialTheme.colorScheme.tertiary,
+                            icon = {
+                                Icon(
+                                    painter            = painterResource(R.drawable.ic_layers),
+                                    contentDescription = null,
+                                    tint               = MaterialTheme.colorScheme.tertiary,
+                                    modifier           = Modifier.size(20.dp)
+                                )
+                            }
+                        )
+                    }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    AppStatCard(
-                        title       = "Stock Bajo",
-                        value       = stats.lowStockCount.toString(),
-                        modifier    = Modifier.weight(1f),
-                        accentColor = MaterialTheme.colorScheme.error,
-                        icon = {
-                            Icon(
-                                painter           = painterResource(R.drawable.ic_warning),
-                                contentDescription = null,
-                                tint              = MaterialTheme.colorScheme.error,
-                                modifier          = Modifier.size(20.dp)
-                            )
-                        }
-                    )
-                    AppStatCard(
-                        title       = "Valor Inventario",
-                        value       = "$${"%.0f".format(stats.totalInventoryValue)}",
-                        modifier    = Modifier.weight(1f),
-                        accentColor = Color(0xFF2E7D32),
-                        icon = {
-                            Icon(
-                                painter           = painterResource(R.drawable.ic_attach_money),
-                                contentDescription = null,
-                                tint              = Color(0xFF2E7D32),
-                                modifier          = Modifier.size(20.dp)
-                            )
-                        }
-                    )
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        AppStatCard(
+                            title       = "Stock Bajo",
+                            value       = stats.lowStockCount.toString(),
+                            modifier    = Modifier.weight(1f),
+                            accentColor = MaterialTheme.colorScheme.error,
+                            icon = {
+                                Icon(
+                                    painter            = painterResource(R.drawable.ic_warning),
+                                    contentDescription = null,
+                                    tint               = MaterialTheme.colorScheme.error,
+                                    modifier           = Modifier.size(20.dp)
+                                )
+                            }
+                        )
+                        AppStatCard(
+                            title       = "Valor Inventario",
+                            value       = "$${"%.0f".format(stats.totalInventoryValue)}",
+                            modifier    = Modifier.weight(1f),
+                            accentColor = Color(0xFF2E7D32),
+                            icon = {
+                                Icon(
+                                    painter            = painterResource(R.drawable.ic_attach_money),
+                                    contentDescription = null,
+                                    tint               = Color(0xFF2E7D32),
+                                    modifier           = Modifier.size(20.dp)
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -159,7 +192,7 @@ fun DashboardScreen(
             }
         }
 
-        // ─── Header: Productos recientes ──────────────────────────
+        // ─── Productos recientes ──────────────────────────────────
         item {
             Row(
                 modifier              = Modifier.fillMaxWidth(),
@@ -175,7 +208,6 @@ fun DashboardScreen(
             }
         }
 
-        // ─── Lista: Productos recientes ───────────────────────────
         if (stats.recentProducts.isEmpty()) {
             item {
                 Box(
@@ -218,10 +250,10 @@ fun DashboardScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter           = painterResource(id = R.drawable.ic_inventory),
+                                painter            = painterResource(id = R.drawable.ic_inventory),
                                 contentDescription = null,
-                                tint              = MaterialTheme.colorScheme.primary,
-                                modifier          = Modifier.size(24.dp)
+                                tint               = MaterialTheme.colorScheme.primary,
+                                modifier           = Modifier.size(24.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
@@ -232,7 +264,7 @@ fun DashboardScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                "Código: ${product.id.take(8).uppercase()}",
+                                "Código: ${product.codigo.ifEmpty { product.id.take(8).uppercase() }}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -25,11 +26,11 @@ class MainActivity : ComponentActivity() {
     private lateinit var credentialManager: CredentialManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen() // ← agrega antes de super.onCreate
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // applicationContext evita leak; AppViewModelFactory lo pasa a ImageRepository
-        val factory = AppViewModelFactory(context = applicationContext)
+        val factory       = AppViewModelFactory(context = applicationContext)
         authViewModel     = ViewModelProvider(this, factory)[AuthViewModel::class.java]
         credentialManager = CredentialManager.create(this)
 
@@ -55,7 +56,10 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             try {
-                val result     = credentialManager.getCredential(request = request, context = this@MainActivity)
+                val result     = credentialManager.getCredential(
+                    request = request,
+                    context = this@MainActivity
+                )
                 val credential = result.credential
                 if (credential is CustomCredential &&
                     credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
