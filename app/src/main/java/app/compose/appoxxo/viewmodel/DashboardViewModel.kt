@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import app.compose.appoxxo.data.model.Product
 import app.compose.appoxxo.data.repository.ProductRepository
 import app.compose.appoxxo.data.util.UiState
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
