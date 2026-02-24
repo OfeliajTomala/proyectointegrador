@@ -1,5 +1,6 @@
 package app.compose.appoxxo.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,7 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.MovementType
 import app.compose.appoxxo.data.util.UiState
@@ -44,25 +47,17 @@ fun MovementsScreen(
         SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("es"))
     }
 
-    // Carga inicial
     LaunchedEffect(Unit) {
         viewModel.loadAllMovements()
         viewModel.loadDeletedMovements()
     }
 
-    // Cuando el ViewModel termina una operación (Success),
-    // recarga la lista correcta según la pestaña activa.
-    // Se usa snapshotFlow para evitar loops: solo reacciona cuando
-    // uiState cambia a Success, no cuando vuelve a Idle tras resetState()
     LaunchedEffect(Unit) {
         snapshotFlow { uiState }
             .collect { state ->
                 if (state is UiState.Success) {
-                    if (showDeleted) {
-                        viewModel.loadDeletedMovements()
-                    } else {
-                        viewModel.loadAllMovements()
-                    }
+                    if (showDeleted) viewModel.loadDeletedMovements()
+                    else viewModel.loadAllMovements()
                     viewModel.resetState()
                 }
             }
@@ -73,25 +68,19 @@ fun MovementsScreen(
         AlertDialog(
             onDismissRequest = { movementToDelete.value = null },
             shape            = RoundedCornerShape(20.dp),
-            title = {
-                Text("Eliminar movimiento", style = MaterialTheme.typography.titleLarge)
+            title            = {
+                Text("Eliminar movimiento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             },
             text = {
                 Text(
-                    "¿Estás seguro que deseas eliminar este movimiento? " +
-                            "Podrás verlo en la pestaña de eliminados.",
+                    "¿Estás seguro? Podrás verlo en la pestaña Eliminados.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteMovement(movementId)
-                        movementToDelete.value = null
-                    }
-                ) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = { viewModel.deleteMovement(movementId); movementToDelete.value = null }) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
@@ -105,8 +94,7 @@ fun MovementsScreen(
     // Filtrado
     val filteredMovements = if (showDeleted) {
         deletedMovements.filter { m ->
-            searchQuery.isBlank() ||
-                    m.productName.contains(searchQuery, ignoreCase = true)
+            searchQuery.isBlank() || m.productName.contains(searchQuery, ignoreCase = true)
         }
     } else {
         allMovements.filter { m ->
@@ -117,64 +105,65 @@ fun MovementsScreen(
         }
     }
 
-    // Date pickers
     if (showDateFromPicker.value) {
         AppDatePickerDialog(
             initialDate    = dateFrom,
             title          = "Desde",
-            onDateSelected = {
-                viewModel.setDateFrom(it)
-                showDateFromPicker.value = false
-            },
-            onDismiss = { showDateFromPicker.value = false }
+            onDateSelected = { viewModel.setDateFrom(it); showDateFromPicker.value = false },
+            onDismiss      = { showDateFromPicker.value = false }
         )
     }
     if (showDateToPicker.value) {
         AppDatePickerDialog(
             initialDate    = dateTo,
             title          = "Hasta",
-            onDateSelected = {
-                viewModel.setDateTo(it)
-                showDateToPicker.value = false
-            },
-            onDismiss = { showDateToPicker.value = false }
+            onDateSelected = { viewModel.setDateTo(it); showDateToPicker.value = false },
+            onDismiss      = { showDateToPicker.value = false }
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
 
-        // Toggle Activos / Eliminados
-        PrimaryTabRow(selectedTabIndex = if (showDeleted) 1 else 0) {
+        // ── Tabs Activos / Eliminados ─────────────────────────────
+        PrimaryTabRow(
+            selectedTabIndex = if (showDeleted) 1 else 0,
+            containerColor   = MaterialTheme.colorScheme.surface,
+            contentColor     = MaterialTheme.colorScheme.primary
+        ) {
             Tab(
                 selected = !showDeleted,
-                onClick  = {
-                    showDeleted = false
-                    viewModel.loadAllMovements()
-                },
-                text = { Text("Activos") }
+                onClick  = { showDeleted = false; viewModel.loadAllMovements() },
+                text     = { Text("Activos", fontSize = 14.sp) }
             )
             Tab(
                 selected = showDeleted,
-                onClick  = {
-                    showDeleted = true
-                    viewModel.loadDeletedMovements()
-                },
-                text = { Text("Eliminados") }
+                onClick  = { showDeleted = true; viewModel.loadDeletedMovements() },
+                text     = { Text("Eliminados", fontSize = 14.sp) }
             )
         }
 
-        // Filtros
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-
+        // ── Filtros ───────────────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Buscador
             OutlinedTextField(
                 value         = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder   = { Text("Buscar producto…") },
+                placeholder   = { Text("Buscar producto…", fontSize = 14.sp) },
                 leadingIcon   = {
                     Icon(
                         painter            = painterResource(id = R.drawable.ic_inventory),
                         contentDescription = null,
-                        modifier           = Modifier.size(20.dp)
+                        modifier           = Modifier.size(18.dp),
+                        tint               = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 trailingIcon = if (searchQuery.isNotEmpty()) {
@@ -183,32 +172,38 @@ fun MovementsScreen(
                             Icon(
                                 painter            = painterResource(id = R.drawable.ic_delete),
                                 contentDescription = "Limpiar",
-                                modifier           = Modifier.size(18.dp)
+                                modifier           = Modifier.size(17.dp),
+                                tint               = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 } else null,
                 modifier   = Modifier.fillMaxWidth(),
-                shape      = RoundedCornerShape(12.dp),
-                singleLine = true
+                shape      = RoundedCornerShape(14.dp),
+                singleLine = true,
+                colors     = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor      = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor    = MaterialTheme.colorScheme.outlineVariant,
+                    focusedContainerColor   = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
             )
 
+            // Filtros de tipo (solo en pestaña activos)
             if (!showDeleted) {
-                Spacer(modifier = Modifier.height(10.dp))
-
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = selectedFilter == null,
                         onClick  = { selectedFilter = null },
-                        label    = { Text("Todos") }
+                        label    = { Text("Todos", fontSize = 13.sp) }
                     )
                     FilterChip(
                         selected = selectedFilter == MovementType.ENTRADA,
                         onClick  = { selectedFilter = MovementType.ENTRADA },
-                        label    = { Text("Entradas") },
+                        label    = { Text("Entradas", fontSize = 13.sp) },
                         leadingIcon = {
                             Icon(
-                                painter            = painterResource(id = R.drawable.ic_arrow_downward),
+                                painterResource(id = R.drawable.ic_arrow_downward),
                                 contentDescription = null,
                                 modifier           = Modifier.size(14.dp)
                             )
@@ -217,10 +212,10 @@ fun MovementsScreen(
                     FilterChip(
                         selected = selectedFilter == MovementType.SALIDA,
                         onClick  = { selectedFilter = MovementType.SALIDA },
-                        label    = { Text("Salidas") },
+                        label    = { Text("Salidas", fontSize = 13.sp) },
                         leadingIcon = {
                             Icon(
-                                painter            = painterResource(id = R.drawable.ic_arrow_upward),
+                                painterResource(id = R.drawable.ic_arrow_upward),
                                 contentDescription = null,
                                 modifier           = Modifier.size(14.dp)
                             )
@@ -228,8 +223,7 @@ fun MovementsScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
+                // Filtro de fechas
                 Row(
                     modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -238,71 +232,97 @@ fun MovementsScreen(
                     OutlinedButton(
                         onClick        = { showDateFromPicker.value = true },
                         modifier       = Modifier.weight(1f),
-                        shape          = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                        shape          = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        border         = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (dateFrom != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            else MaterialTheme.colorScheme.outlineVariant
+                        )
                     ) {
                         Icon(
-                            painter            = painterResource(id = R.drawable.ic_notifications),
+                            painterResource(id = R.drawable.ic_notifications),
                             contentDescription = null,
-                            modifier           = Modifier.size(16.dp)
+                            modifier           = Modifier.size(14.dp),
+                            tint               = if (dateFrom != null)
+                                MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text  = if (dateFrom != null) dateFormatter.format(dateFrom!!) else "Desde",
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (dateFrom != null) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
                         )
                     }
 
                     OutlinedButton(
                         onClick        = { showDateToPicker.value = true },
                         modifier       = Modifier.weight(1f),
-                        shape          = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                        shape          = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        border         = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (dateTo != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            else MaterialTheme.colorScheme.outlineVariant
+                        )
                     ) {
                         Icon(
-                            painter            = painterResource(id = R.drawable.ic_notifications),
+                            painterResource(id = R.drawable.ic_notifications),
                             contentDescription = null,
-                            modifier           = Modifier.size(16.dp)
+                            modifier           = Modifier.size(14.dp),
+                            tint               = if (dateTo != null)
+                                MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text  = if (dateTo != null) dateFormatter.format(dateTo!!) else "Hasta",
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (dateTo != null) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
                         )
                     }
 
                     if (dateFrom != null || dateTo != null) {
-                        IconButton(onClick = { viewModel.clearDateFilter() }) {
+                        IconButton(
+                            onClick  = { viewModel.clearDateFilter() },
+                            modifier = Modifier.size(36.dp)
+                        ) {
                             Icon(
-                                painter            = painterResource(id = R.drawable.ic_delete),
+                                painterResource(id = R.drawable.ic_delete),
                                 contentDescription = "Limpiar fechas",
                                 tint               = MaterialTheme.colorScheme.error,
-                                modifier           = Modifier.size(20.dp)
+                                modifier           = Modifier.size(18.dp)
                             )
                         }
                     }
                 }
 
+                // Etiqueta de rango activo
                 if (dateFrom != null || dateTo != null) {
-                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = buildString {
                             append("Mostrando: ")
                             if (dateFrom != null) append("desde ${dateFormatter.format(dateFrom!!)} ")
                             if (dateTo   != null) append("hasta ${dateFormatter.format(dateTo!!)}")
                         },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.primary,
+                        fontSize = 11.sp
                     )
                 }
             }
         }
 
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-        // Lista
+        // ── Lista ─────────────────────────────────────────────────
         LazyColumn(
-            contentPadding      = PaddingValues(16.dp),
+            contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
@@ -310,7 +330,8 @@ fun MovementsScreen(
                     "${filteredMovements.size} movimiento${if (filteredMovements.size != 1) "s" else ""}",
                     style    = MaterialTheme.typography.labelLarge,
                     color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = 4.dp),
+                    fontSize = 12.sp
                 )
             }
 

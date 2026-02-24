@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,24 +30,24 @@ fun ProductCard(
 
     Card(
         modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(16.dp),
+        shape     = RoundedCornerShape(18.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border    = androidx.compose.foundation.BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
         ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column {
-            // ── Imagen — FIX #1: solo se muestra si el producto tiene imagen ──
+            // ── Imagen ─────────────────────────────────────────────
             if (hasImage) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(160.dp)
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .height(155.dp)
+                        .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     AsyncImage(
@@ -56,16 +56,20 @@ fun ProductCard(
                         modifier           = Modifier.fillMaxSize(),
                         contentScale       = ContentScale.Crop
                     )
-                    Box(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)) {
+                    // Chip de stock superpuesto
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(10.dp)
+                    ) {
                         StockAlertChip(stock = product.stock)
                     }
                 }
             }
 
-            // ── Info ──────────────────────────────────────────────
-            Column(modifier = Modifier.padding(14.dp)) {
+            // ── Info ───────────────────────────────────────────────
+            Column(modifier = Modifier.padding(16.dp)) {
 
-                // Si no hay imagen, el chip de stock va junto al nombre
                 Row(
                     modifier              = Modifier.fillMaxWidth(),
                     verticalAlignment     = Alignment.CenterVertically,
@@ -74,12 +78,11 @@ fun ProductCard(
                     Text(
                         text       = product.name,
                         style      = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines   = 1,
-                        modifier   = Modifier.weight(1f)
+                        modifier   = Modifier.weight(1f),
+                        fontSize   = 16.sp
                     )
-                    // FIX #1: el chip siempre visible, pero cuando no hay imagen
-                    // se posiciona aquí en lugar del Box superior
                     if (!hasImage) {
                         Spacer(modifier = Modifier.width(8.dp))
                         StockAlertChip(stock = product.stock)
@@ -87,58 +90,64 @@ fun ProductCard(
                 }
 
                 if (product.codigo.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text  = product.codigo,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text       = "$${"%.2f".format(product.price)}",
-                    style      = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color      = MaterialTheme.colorScheme.primary,
-                    fontSize   = 20.sp
-                )
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 10.dp),
-                    color    = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                )
-
-                // ── Acciones ──────────────────────────────────────
                 Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    modifier          = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(
+                        text       = "$${"%.2f".format(product.price)}",
+                        style      = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color      = MaterialTheme.colorScheme.primary,
+                        fontSize   = 22.sp
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    // Acciones en fila con el precio
                     onViewMovements?.let {
-                        IconButton(onClick = it) {
+                        IconButton(
+                            onClick  = it,
+                            modifier = Modifier.size(36.dp)
+                        ) {
                             Icon(
                                 painter            = painterResource(id = R.drawable.ic_swap_vert),
                                 contentDescription = "Movimientos",
                                 tint               = MaterialTheme.colorScheme.secondary,
-                                modifier           = Modifier.size(20.dp)
+                                modifier           = Modifier.size(19.dp)
                             )
                         }
                     }
                     if (role == UserRole.ADMIN || role == UserRole.ENCARGADO) {
-                        IconButton(onClick = onEdit) {
+                        IconButton(
+                            onClick  = onEdit,
+                            modifier = Modifier.size(36.dp)
+                        ) {
                             Icon(
                                 painter            = painterResource(id = R.drawable.ic_edit),
                                 contentDescription = "Editar",
                                 tint               = MaterialTheme.colorScheme.primary,
-                                modifier           = Modifier.size(20.dp)
+                                modifier           = Modifier.size(18.dp)
                             )
                         }
-                        IconButton(onClick = onDelete) {
+                        IconButton(
+                            onClick  = onDelete,
+                            modifier = Modifier.size(36.dp)
+                        ) {
                             Icon(
                                 painter            = painterResource(id = R.drawable.ic_delete),
                                 contentDescription = "Eliminar",
                                 tint               = MaterialTheme.colorScheme.error,
-                                modifier           = Modifier.size(20.dp)
+                                modifier           = Modifier.size(18.dp)
                             )
                         }
                     }

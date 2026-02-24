@@ -1,34 +1,29 @@
 package app.compose.appoxxo.ui.components
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
-import java.text.SimpleDateFormat
-import java.util.Locale
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.Movement
 import app.compose.appoxxo.data.model.MovementType
-import app.compose.appoxxo.R
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun MovementCard(
     movement: Movement,
-    onDelete: (() -> Unit)? = null   // null = Cajero no ve el botón
+    onDelete: (() -> Unit)? = null
 ) {
     val isEntrada   = movement.type == MovementType.ENTRADA
     val accentColor = if (isEntrada) MaterialTheme.colorScheme.primary
@@ -43,8 +38,15 @@ fun MovementCard(
 
     Card(
         modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape     = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border    = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            accentColor.copy(alpha = 0.12f)
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier          = Modifier
@@ -52,12 +54,12 @@ fun MovementCard(
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ícono entrada/salida
+            // Ícono tipo movimiento
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(42.dp)
                     .clip(CircleShape)
-                    .background(accentColor.copy(alpha = 0.12f)),
+                    .background(accentColor.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -66,8 +68,8 @@ fun MovementCard(
                         else R.drawable.ic_arrow_upward
                     ),
                     contentDescription = null,
-                    tint     = accentColor,
-                    modifier = Modifier.size(22.dp)
+                    tint               = accentColor,
+                    modifier           = Modifier.size(20.dp)
                 )
             }
 
@@ -77,44 +79,60 @@ fun MovementCard(
                 Text(
                     movement.productName,
                     style      = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize   = 15.sp
                 )
-                // Fecha y hora del movimiento
                 Text(
                     dateStr,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
                 )
-                // Usuario que registró
                 if (movement.userName.isNotEmpty()) {
                     Text(
-                        "Registrado por: ${movement.userName}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        "Por: ${movement.userName}",
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                        fontSize = 11.sp
                     )
                 }
             }
 
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
                     "${if (isEntrada) "+" else "-"}${movement.quantity}",
                     style      = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color      = accentColor
+                    fontWeight = FontWeight.ExtraBold,
+                    color      = accentColor,
+                    fontSize   = 20.sp
                 )
-                Text(
-                    if (isEntrada) "ENTRADA" else "SALIDA",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accentColor
-                )
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = accentColor.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        if (isEntrada) "ENTRADA" else "SALIDA",
+                        style      = MaterialTheme.typography.labelSmall,
+                        color      = accentColor,
+                        fontWeight = FontWeight.Bold,
+                        fontSize   = 10.sp,
+                        modifier   = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
                 // Botón eliminar — solo si se pasa el callback
                 onDelete?.let {
-                    IconButton(onClick = it) {
+                    IconButton(
+                        onClick  = it,
+                        modifier = Modifier.size(30.dp)
+                    ) {
                         Icon(
                             painter            = painterResource(id = R.drawable.ic_delete),
                             contentDescription = "Eliminar movimiento",
-                            tint               = MaterialTheme.colorScheme.error,
-                            modifier           = Modifier.size(18.dp)
+                            tint               = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                            modifier           = Modifier.size(16.dp)
                         )
                     }
                 }
@@ -122,7 +140,6 @@ fun MovementCard(
         }
     }
 }
-
 
 @Composable
 fun DeletedMovementCard(movement: Movement) {
@@ -147,10 +164,14 @@ fun DeletedMovementCard(movement: Movement) {
 
     Card(
         modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(14.dp),
+        shape     = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors    = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        border    = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.error.copy(alpha = 0.18f)
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
         )
     ) {
         Row(
@@ -159,12 +180,11 @@ fun DeletedMovementCard(movement: Movement) {
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ícono con opacidad para indicar eliminado
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(42.dp)
                     .clip(CircleShape)
-                    .background(accentColor.copy(alpha = 0.08f)),
+                    .background(accentColor.copy(alpha = 0.07f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -173,8 +193,8 @@ fun DeletedMovementCard(movement: Movement) {
                         else R.drawable.ic_arrow_upward
                     ),
                     contentDescription = null,
-                    tint     = accentColor.copy(alpha = 0.5f),
-                    modifier = Modifier.size(22.dp)
+                    tint               = accentColor.copy(alpha = 0.45f),
+                    modifier           = Modifier.size(20.dp)
                 )
             }
 
@@ -185,54 +205,68 @@ fun DeletedMovementCard(movement: Movement) {
                     movement.productName,
                     style      = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color      = MaterialTheme.colorScheme.onSurfaceVariant
+                    color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize   = 15.sp
                 )
-                // Fecha y hora del movimiento original
                 Text(
                     "Registrado: $dateStr",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
                 )
-                // Usuario que registró el movimiento
                 if (movement.userName.isNotEmpty()) {
                     Text(
                         "Por: ${movement.userName}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                        fontSize = 11.sp
                     )
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.error.copy(alpha = 0.15f))
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Información de eliminación
                 Text(
                     "Eliminado: $deletedAtStr",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = MaterialTheme.colorScheme.error.copy(alpha = 0.75f),
+                    fontSize = 11.sp
                 )
                 if (movement.deletedBy.isNotEmpty()) {
                     Text(
                         "Eliminado por: ${movement.deletedBy}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.error.copy(alpha = 0.75f),
+                        fontSize = 11.sp
                     )
                 }
             }
 
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
                     "${if (isEntrada) "+" else "-"}${movement.quantity}",
                     style      = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color      = accentColor.copy(alpha = 0.5f)
+                    fontWeight = FontWeight.ExtraBold,
+                    color      = accentColor.copy(alpha = 0.45f),
+                    fontSize   = 20.sp
                 )
-                Text(
-                    if (isEntrada) "ENTRADA" else "SALIDA",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accentColor.copy(alpha = 0.5f)
-                )
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = accentColor.copy(alpha = 0.07f)
+                ) {
+                    Text(
+                        if (isEntrada) "ENTRADA" else "SALIDA",
+                        style      = MaterialTheme.typography.labelSmall,
+                        color      = accentColor.copy(alpha = 0.5f),
+                        fontWeight = FontWeight.Bold,
+                        fontSize   = 10.sp,
+                        modifier   = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
             }
         }
     }

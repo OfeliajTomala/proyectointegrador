@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.User
 import app.compose.appoxxo.data.model.UserRole
@@ -22,14 +23,12 @@ import app.compose.appoxxo.ui.components.AppConfirmDialog
 import app.compose.appoxxo.ui.components.AppEmptyState
 import app.compose.appoxxo.viewmodel.UserViewModel
 
-
 @Composable
 fun UsersScreen(viewModel: UserViewModel) {
-    val users by viewModel.users.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    val userToDelete = remember { mutableStateOf<User?>(null) }
+    val users             by viewModel.users.collectAsState()
+    val uiState           by viewModel.uiState.collectAsState()
+    val snackbarHostState  = remember { SnackbarHostState() }
+    val userToDelete       = remember { mutableStateOf<User?>(null) }
 
     val userToDeleteSnapshot = userToDelete.value
     if (userToDeleteSnapshot != null) {
@@ -56,7 +55,7 @@ fun UsersScreen(viewModel: UserViewModel) {
         when {
             uiState is UiState.Loading && users.isEmpty() -> {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier         = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) { CircularProgressIndicator() }
             }
@@ -84,7 +83,8 @@ fun UsersScreen(viewModel: UserViewModel) {
                             "${users.size} usuario${if (users.size != 1) "s" else ""} registrados",
                             style    = MaterialTheme.typography.labelLarge,
                             color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            fontSize = 12.sp
                         )
                     }
 
@@ -101,6 +101,7 @@ fun UsersScreen(viewModel: UserViewModel) {
         }
     }
 }
+
 @Composable
 private fun UserCard(
     user: User,
@@ -108,8 +109,6 @@ private fun UserCard(
     onRoleChange: (UserRole) -> Unit,
     onDelete: () -> Unit
 ) {
-    //var expanded by remember { mutableStateOf(false) }
-
     val roleColor = when (user.role) {
         UserRole.ADMIN     -> MaterialTheme.colorScheme.error
         UserRole.ENCARGADO -> MaterialTheme.colorScheme.tertiary
@@ -117,100 +116,121 @@ private fun UserCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border    = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier          = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Avatar con inicial
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
-                        .background(roleColor.copy(alpha = 0.15f)),
+                        .background(roleColor.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = user.name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = roleColor
+                        text       = user.name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                        style      = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color      = roleColor,
+                        fontSize   = 20.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         user.name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold
+                        style      = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize   = 15.sp
                     )
                     Text(
                         user.email,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style  = MaterialTheme.typography.bodySmall,
+                        color  = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
                     )
                 }
 
                 // Badge de rol
-                Badge(containerColor = roleColor) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = roleColor.copy(alpha = 0.1f),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp, roleColor.copy(alpha = 0.2f)
+                    )
+                ) {
                     Text(
                         user.role.name,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall
+                        modifier   = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style      = MaterialTheme.typography.labelSmall,
+                        color      = roleColor,
+                        fontWeight = FontWeight.Bold,
+                        fontSize   = 11.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider()
+            Spacer(modifier = Modifier.height(14.dp))
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            )
             Spacer(modifier = Modifier.height(12.dp))
 
             // Selector de rol
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier          = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "Rol:",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style      = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(end = 8.dp)
+                    color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier   = Modifier.padding(end = 8.dp)
                 )
 
                 UserRole.entries.forEach { role ->
                     FilterChip(
                         selected = user.role == role,
-                        onClick = { if (user.role != role) onRoleChange(role) },
-                        label = {
+                        onClick  = { if (user.role != role) onRoleChange(role) },
+                        label    = {
                             Text(
                                 role.name,
-                                style = MaterialTheme.typography.labelSmall
+                                style    = MaterialTheme.typography.labelSmall,
+                                fontSize = 11.sp
                             )
                         },
-                        modifier = Modifier.padding(end = 6.dp),
-                        enabled = !isLoading
+                        modifier = Modifier.padding(end = 5.dp),
+                        enabled  = !isLoading
                     )
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Botón eliminar
                 IconButton(
-                    onClick = onDelete,
-                    enabled = !isLoading
+                    onClick  = onDelete,
+                    enabled  = !isLoading,
+                    modifier = Modifier.size(34.dp)
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_delete),
+                        painter            = painterResource(id = R.drawable.ic_delete),
                         contentDescription = "Eliminar usuario",
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
+                        tint               = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                        modifier           = Modifier.size(18.dp)
                     )
                 }
             }

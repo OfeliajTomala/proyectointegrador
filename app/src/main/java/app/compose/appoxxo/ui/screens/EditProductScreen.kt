@@ -1,6 +1,7 @@
 package app.compose.appoxxo.ui.screens
 
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -11,12 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.util.UiState
 import app.compose.appoxxo.ui.components.AppButton
 import app.compose.appoxxo.ui.components.AppTextField
 import app.compose.appoxxo.ui.components.ImagePickerSection
 import app.compose.appoxxo.viewmodel.ProductViewModel
+
+
+// ─── EditProductScreen ─────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,13 +56,10 @@ fun EditProductScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Editar producto", fontWeight = FontWeight.Bold) },
+                title = { Text("Editar producto", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
                     IconButton(onClick = onProductUpdated) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_back),
-                            contentDescription = "Volver"
-                        )
+                        Icon(painterResource(id = R.drawable.ic_arrow_back), "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -68,70 +70,81 @@ fun EditProductScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         if (product == null) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) { CircularProgressIndicator() }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
             return@Scaffold
         }
 
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
+                .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            // ── Imagen ────────────────────────────────────────────
             ImagePickerSection(
                 currentImageUrl = product.imageUrl,
                 selectedUri     = imageUri,
                 onImageSelected = { imageUri = it }
             )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(
+                color    = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                modifier = Modifier.padding(vertical = 2.dp)
+            )
 
             Text(
                 "Información del producto",
-                style = MaterialTheme.typography.labelLarge,
+                style      = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize   = 12.sp
             )
 
-            AppTextField(value = name, onValueChange = { name = it }, label = "Nombre del producto")
             AppTextField(
-                value = code,
+                value         = name,
+                onValueChange = { name = it },
+                label         = "Nombre del producto"
+            )
+
+            AppTextField(
+                value         = code,
                 onValueChange = { if (it.length <= 10) code = it.uppercase() },
-                label = "Código",
+                label         = "Código",
                 isError       = code.isNotEmpty() && code.length < 5,
                 errorMessage  = "El código debe tener entre 5 y 10 caracteres"
             )
+
             AppTextField(
-                value = price, onValueChange = { price = it }, label = "Precio",
-                isError = price.isNotEmpty() && price.toDoubleOrNull() == null,
-                errorMessage = "Ingresa un número válido"
-            )
-            AppTextField(
-                value = stock, onValueChange = { stock = it }, label = "Stock",
-                isError = stock.isNotEmpty() && stock.toIntOrNull() == null,
-                errorMessage = "Ingresa un número entero"
+                value         = price,
+                onValueChange = { price = it },
+                label         = "Precio",
+                isError       = price.isNotEmpty() && price.toDoubleOrNull() == null,
+                errorMessage  = "Ingresa un número válido"
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            AppTextField(
+                value         = stock,
+                onValueChange = { stock = it },
+                label         = "Stock",
+                isError       = stock.isNotEmpty() && stock.toIntOrNull() == null,
+                errorMessage  = "Ingresa un número entero"
+            )
 
             val isFormValid = name.isNotBlank()
                     && price.toDoubleOrNull() != null
                     && stock.toIntOrNull() != null
                     && (code.isEmpty() || code.length >= 5)
 
-
             AppButton(
-                text = if (imageUri != null) "Actualizar con nueva imagen" else "Actualizar producto",
-                onClick = {
+                text           = if (imageUri != null) "Actualizar con nueva imagen"
+                else "Actualizar producto",
+                onClick        = {
                     viewModel.updateProduct(
-                        product = product.copy(
+                        product  = product.copy(
                             name   = name.trim(),
                             codigo = code.trim(),
                             price  = price.toDouble(),

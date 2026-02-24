@@ -15,10 +15,9 @@ import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
 
 /**
- * Chip de estado de stock con tres niveles visuales:
- *  - Sin stock   → rojo sólido
- *  - Stock bajo  → amarillo/terciario
- *  - Stock OK    → verde suave
+ * Chip de estado de stock con tres niveles.
+ * Rediseño: bordes redondeados más pronunciados, tamaño ligeramente mayor,
+ * sin cambios en la lógica de colores ni en los niveles.
  */
 @Composable
 fun StockAlertChip(
@@ -27,20 +26,20 @@ fun StockAlertChip(
     showIcon: Boolean = true
 ) {
     val (containerColor, contentColor, label, iconRes) = when {
-        stock == 0   -> StockLevel(
+        stock == 0 -> StockLevel(
             MaterialTheme.colorScheme.error,
             MaterialTheme.colorScheme.onError,
             "Sin stock",
             R.drawable.ic_warning
         )
-        stock <= 5   -> StockLevel(
+        stock <= 5 -> StockLevel(
             MaterialTheme.colorScheme.tertiary,
             MaterialTheme.colorScheme.onTertiary,
             "Stock bajo: $stock",
             R.drawable.ic_warning
         )
-        else         -> StockLevel(
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+        else -> StockLevel(
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
             MaterialTheme.colorScheme.primary,
             "Stock: $stock",
             R.drawable.ic_check_circle
@@ -49,7 +48,7 @@ fun StockAlertChip(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(containerColor)
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
@@ -59,18 +58,18 @@ fun StockAlertChip(
         ) {
             if (showIcon) {
                 Icon(
-                    painter = painterResource(id = iconRes),
+                    painter            = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint     = contentColor,
-                    modifier = Modifier.size(13.dp)
+                    tint               = contentColor,
+                    modifier           = Modifier.size(12.dp)
                 )
             }
             Text(
-                text       = label,
-                color      = contentColor,
-                fontWeight = FontWeight.SemiBold,
-                fontSize   = 11.sp,
-                letterSpacing = 0.2.sp
+                text          = label,
+                color         = contentColor,
+                fontWeight    = FontWeight.Bold,
+                fontSize      = 11.sp,
+                letterSpacing = 0.1.sp
             )
         }
     }

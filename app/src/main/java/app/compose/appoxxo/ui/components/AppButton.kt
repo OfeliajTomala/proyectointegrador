@@ -1,7 +1,8 @@
 package app.compose.appoxxo.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -28,47 +29,48 @@ fun AppButton(
     val animatedColor by animateColorAsState(
         targetValue = if (enabled && !isLoading) containerColor
         else containerColor.copy(alpha = 0.5f),
-        animationSpec = tween(200),
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
         label = "buttonColor"
     )
 
     Button(
         onClick   = onClick,
-        modifier  = modifier.height(52.dp),
+        modifier  = modifier.height(54.dp),
         enabled   = enabled && !isLoading,
-        shape     = RoundedCornerShape(14.dp),
+        shape     = RoundedCornerShape(16.dp),
         colors    = ButtonDefaults.buttonColors(
             containerColor         = animatedColor,
             contentColor           = contentColor,
-            disabledContainerColor = containerColor.copy(alpha = 0.38f),
-            disabledContentColor   = contentColor.copy(alpha = 0.38f)
+            disabledContainerColor = containerColor.copy(alpha = 0.35f),
+            disabledContentColor   = contentColor.copy(alpha = 0.45f)
         ),
         elevation = ButtonDefaults.buttonElevation(
             defaultElevation  = 0.dp,
-            pressedElevation  = 0.dp
+            pressedElevation  = 0.dp,
+            hoveredElevation  = 2.dp
         ),
-        contentPadding = PaddingValues(horizontal = 24.dp)
+        contentPadding = PaddingValues(horizontal = 28.dp)
     ) {
         if (isLoading) {
             CircularProgressIndicator(
-                modifier  = Modifier.size(20.dp),
-                color     = contentColor,
-                strokeWidth = 2.5.dp
+                modifier    = Modifier.size(22.dp),
+                color       = contentColor,
+                strokeWidth = 2.dp
             )
         } else {
             Row(
-                verticalAlignment    = Alignment.CenterVertically,
+                verticalAlignment     = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 leadingIcon?.let {
                     it()
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                 }
                 Text(
-                    text       = text,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize   = 15.sp,
-                    letterSpacing = 0.3.sp
+                    text          = text,
+                    fontWeight    = FontWeight.SemiBold,
+                    fontSize      = 15.sp,
+                    letterSpacing = 0.2.sp
                 )
             }
         }
@@ -86,13 +88,13 @@ fun AppOutlinedButton(
 ) {
     OutlinedButton(
         onClick  = onClick,
-        modifier = modifier.height(52.dp),
+        modifier = modifier.height(54.dp),
         enabled  = enabled,
-        shape    = RoundedCornerShape(14.dp),
+        shape    = RoundedCornerShape(16.dp),
         colors   = ButtonDefaults.outlinedButtonColors(contentColor = color),
         border   = androidx.compose.foundation.BorderStroke(
-            1.5.dp,
-            if (enabled) color.copy(alpha = 0.6f) else color.copy(alpha = 0.2f)
+            1.dp,
+            if (enabled) color.copy(alpha = 0.5f) else color.copy(alpha = 0.18f)
         )
     ) {
         Row(
@@ -101,7 +103,7 @@ fun AppOutlinedButton(
         ) {
             leadingIcon?.let {
                 it()
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(10.dp))
             }
             Text(
                 text       = text,

@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.Product
 import app.compose.appoxxo.data.model.UserRole
@@ -36,20 +37,17 @@ fun ProductListScreen(
     val uiState         by viewModel.uiState.collectAsState()
     val currentUser     by authViewModel.currentUser.collectAsState()
 
-    var showDeleted       by remember { mutableStateOf(false) }
-    val snackbarHostState  = remember { SnackbarHostState() }
-    val productToDelete    = remember { mutableStateOf<Product?>(null) }
-    val productToRestore   = remember { mutableStateOf<Product?>(null) }
+    var showDeleted      by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val productToDelete   = remember { mutableStateOf<Product?>(null) }
+    val productToRestore  = remember { mutableStateOf<Product?>(null) }
 
-    val canEdit = currentUser?.role == UserRole.ADMIN
-            || currentUser?.role == UserRole.ENCARGADO
+    val canEdit = currentUser?.role == UserRole.ADMIN || currentUser?.role == UserRole.ENCARGADO
 
-    // Carga eliminados al cambiar a esa pestaña
     LaunchedEffect(showDeleted) {
         if (showDeleted) viewModel.loadDeletedProducts()
     }
 
-    // FIX: escucha uiState para recargar la pestaña activa tras cualquier operación
     LaunchedEffect(uiState) {
         when (uiState) {
             is UiState.Error -> {
@@ -57,43 +55,32 @@ fun ProductListScreen(
                 viewModel.resetState()
             }
             is UiState.Success -> {
-                // Recarga la pestaña correcta para reflejar el cambio inmediatamente
-                if (showDeleted) {
-                    viewModel.loadDeletedProducts()
-                }
+                if (showDeleted) viewModel.loadDeletedProducts()
                 viewModel.resetState()
             }
             else -> {}
         }
     }
 
-    // ─── Diálogo eliminar ─────────────────────────────────────────
     productToDelete.value?.let { product ->
         AppConfirmDialog(
             title        = "Eliminar producto",
             message      = "¿Estás seguro que deseas eliminar \"${product.name}\"?",
             confirmLabel = "Eliminar",
             confirmColor = MaterialTheme.colorScheme.error,
-            onConfirm    = {
-                viewModel.deleteProduct(product.id)
-                productToDelete.value = null
-            },
-            onDismiss = { productToDelete.value = null }
+            onConfirm    = { viewModel.deleteProduct(product.id); productToDelete.value = null },
+            onDismiss    = { productToDelete.value = null }
         )
     }
 
-    // ─── Diálogo restaurar ────────────────────────────────────────
     productToRestore.value?.let { product ->
         AppConfirmDialog(
             title        = "Restaurar producto",
             message      = "¿Deseas restaurar \"${product.name}\"? Volverá a estar activo con su stock e historial.",
             confirmLabel = "Restaurar",
             confirmColor = MaterialTheme.colorScheme.primary,
-            onConfirm    = {
-                viewModel.restoreProduct(product.id)
-                productToRestore.value = null
-            },
-            onDismiss = { productToRestore.value = null }
+            onConfirm    = { viewModel.restoreProduct(product.id); productToRestore.value = null },
+            onDismiss    = { productToRestore.value = null }
         )
     }
 
@@ -102,43 +89,48 @@ fun ProductListScreen(
             if (canEdit && !showDeleted) {
                 FloatingActionButton(
                     onClick        = onAddProduct,
-                    shape          = RoundedCornerShape(16.dp),
+                    shape          = RoundedCornerShape(18.dp),
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor   = MaterialTheme.colorScheme.onPrimary
+                    contentColor   = MaterialTheme.colorScheme.onPrimary,
+                    modifier       = Modifier.size(58.dp)
                 ) {
                     Icon(
                         painter            = painterResource(id = R.drawable.ic_add),
-                        contentDescription = "Agregar producto"
+                        contentDescription = "Agregar producto",
+                        modifier           = Modifier.size(26.dp)
                     )
                 }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = padding.calculateBottomPadding())        ) {
-            // ─── Tabs Activos / Eliminados ────────────────────────
-            PrimaryTabRow(selectedTabIndex = if (showDeleted) 1 else 0) {
+                .padding(bottom = padding.calculateBottomPadding())
+        ) {
+            // ── Tabs ──────────────────────────────────────────────
+            PrimaryTabRow(
+                selectedTabIndex = if (showDeleted) 1 else 0,
+                containerColor   = MaterialTheme.colorScheme.surface,
+                contentColor     = MaterialTheme.colorScheme.primary
+            ) {
                 Tab(
                     selected = !showDeleted,
                     onClick  = { showDeleted = false },
-                    text     = { Text("Activos") }
+                    text     = { Text("Activos", fontSize = 14.sp) }
                 )
                 if (canEdit) {
                     Tab(
                         selected = showDeleted,
                         onClick  = { showDeleted = true },
-                        text     = { Text("Eliminados") }
+                        text     = { Text("Eliminados", fontSize = 14.sp) }
                     )
                 }
             }
 
-            // ─── Contenido según tab ──────────────────────────────
+            // ── Productos activos ─────────────────────────────────
             if (!showDeleted) {
-                // ── Productos activos ─────────────────────────────
                 when {
                     uiState is UiState.Loading && products.isEmpty() -> {
                         Box(
@@ -158,19 +150,20 @@ fun ProductListScreen(
                     else -> {
                         LazyColumn(
                             contentPadding      = PaddingValues(
-                                top    = 8.dp,
-                                bottom = 80.dp,
+                                top    = 10.dp,
+                                bottom = 88.dp,
                                 start  = 16.dp,
                                 end    = 16.dp
                             ),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             item {
                                 Text(
                                     "${products.size} producto${if (products.size != 1) "s" else ""}",
                                     style    = MaterialTheme.typography.labelLarge,
                                     color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(vertical = 4.dp)
+                                    modifier = Modifier.padding(vertical = 2.dp),
+                                    fontSize = 12.sp
                                 )
                             }
                             items(products, key = { it.id }) { product ->
@@ -205,19 +198,20 @@ fun ProductListScreen(
                     else -> {
                         LazyColumn(
                             contentPadding      = PaddingValues(
-                                top    = 8.dp,
-                                bottom = 16.dp,
+                                top    = 10.dp,
+                                bottom = 24.dp,
                                 start  = 16.dp,
                                 end    = 16.dp
                             ),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             item {
                                 Text(
                                     "${deletedProducts.size} producto${if (deletedProducts.size != 1) "s" else ""} eliminados",
                                     style    = MaterialTheme.typography.labelLarge,
                                     color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(vertical = 4.dp)
+                                    modifier = Modifier.padding(vertical = 2.dp),
+                                    fontSize = 12.sp
                                 )
                             }
                             items(deletedProducts, key = { it.id }) { product ->
@@ -245,13 +239,13 @@ private fun DeletedProductCard(
 
     Card(
         modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(14.dp),
+        shape     = RoundedCornerShape(16.dp),
         colors    = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.18f)
         ),
-        border    = androidx.compose.foundation.BorderStroke(
+        border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+            MaterialTheme.colorScheme.error.copy(alpha = 0.18f)
         )
     ) {
         Row(
@@ -265,42 +259,51 @@ private fun DeletedProductCard(
                     text       = product.name,
                     style      = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color      = MaterialTheme.colorScheme.onSurface
+                    color      = MaterialTheme.colorScheme.onSurface,
+                    fontSize   = 15.sp
                 )
                 if (product.codigo.isNotBlank()) {
                     Text(
                         text  = "Código: ${product.codigo}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
                     )
                 }
                 Text(
                     text  = "Stock: ${product.stock}  •  $${"%.2f".format(product.price)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
                 )
                 if (product.deletedAt != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text  = "Eliminado: ${dateFormatter.format(product.deletedAt.toDate())}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.75f),
+                        fontSize = 11.sp
                     )
                 }
                 if (product.deletedBy.isNotBlank()) {
                     Text(
                         text  = "Por: ${product.deletedBy}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
                     )
                 }
             }
 
-            IconButton(onClick = onRestore) {
+            IconButton(
+                onClick  = onRestore,
+                modifier = Modifier.size(40.dp)
+            ) {
                 Icon(
                     painter            = painterResource(id = R.drawable.ic_restart),
                     contentDescription = "Restaurar producto",
                     tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(24.dp)
+                    modifier           = Modifier.size(22.dp)
                 )
             }
         }

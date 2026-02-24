@@ -10,11 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.User
 import app.compose.appoxxo.ui.NavItem
@@ -47,27 +49,35 @@ fun AppDrawerContent(
     onLogout: () -> Unit
 ) {
     ModalDrawerSheet(
-        drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+        drawerShape = RoundedCornerShape(topEnd = 20.dp, bottomEnd = 20.dp),
+        drawerContainerColor = MaterialTheme.colorScheme.surface
     ) {
 
-        // ─── Header rojo con foto y nombre ───────────────────────
+        // ─── Header con gradiente rojo ────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFD32F2F))
-                .padding(24.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.82f)
+                        )
+                    )
+                )
+                .padding(horizontal = 24.dp, vertical = 28.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier            = Modifier.fillMaxWidth()
             ) {
-                // Foto de perfil o inicial del nombre
+                // Avatar
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(76.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
-                        .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape),
+                        .background(Color.White.copy(alpha = 0.15f))
+                        .border(2.dp, Color.White.copy(alpha = 0.6f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     if (currentUser?.photoUrl?.isNotEmpty() == true) {
@@ -90,9 +100,8 @@ fun AppDrawerContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Nombre del usuario
                 Text(
                     text       = currentUser?.name ?: "Usuario",
                     style      = MaterialTheme.typography.titleMedium,
@@ -100,26 +109,29 @@ fun AppDrawerContent(
                     color      = Color.White
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
-                // Email del usuario
                 Text(
                     text  = currentUser?.email ?: "",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.8f)
+                    color = Color.White.copy(alpha = 0.75f),
+                    fontSize = 12.sp
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Badge del rol
-                Badge(
-                    containerColor = Color.White.copy(alpha = 0.25f)
+                // Badge de rol
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Color.White.copy(alpha = 0.18f)
                 ) {
                     Text(
                         text     = currentUser?.role?.name ?: "—",
                         color    = Color.White,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
-                        style    = MaterialTheme.typography.labelSmall
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                        style    = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.5.sp
                     )
                 }
             }
@@ -136,23 +148,33 @@ fun AppDrawerContent(
                     icon = {
                         Icon(
                             painter            = painterResource(id = item.iconRes),
-                            contentDescription = item.label
+                            contentDescription = item.label,
+                            modifier           = Modifier.size(20.dp)
                         )
                     },
                     label = {
                         Text(
                             text       = item.label,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            fontSize   = 14.sp
                         )
                     },
                     selected = selected,
                     onClick  = { onNavigate(item.navItem.route) },
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp),
+                    colors   = NavigationDrawerItemDefaults.colors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        selectedIconColor      = MaterialTheme.colorScheme.primary,
+                        selectedTextColor      = MaterialTheme.colorScheme.primary
+                    )
                 )
             }
 
         Spacer(modifier = Modifier.weight(1f))
-        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            color    = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
         Spacer(modifier = Modifier.height(8.dp))
 
         // ─── Cerrar sesión ────────────────────────────────────────
@@ -161,14 +183,16 @@ fun AppDrawerContent(
                 Icon(
                     painter            = painterResource(id = R.drawable.ic_exittoapp),
                     contentDescription = "Cerrar sesión",
-                    tint               = MaterialTheme.colorScheme.error
+                    tint               = MaterialTheme.colorScheme.error,
+                    modifier           = Modifier.size(20.dp)
                 )
             },
             label = {
                 Text(
                     text       = "Cerrar sesión",
                     color      = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    fontSize   = 14.sp
                 )
             },
             selected = false,
@@ -176,6 +200,6 @@ fun AppDrawerContent(
             modifier = Modifier.padding(horizontal = 12.dp)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
     }
 }

@@ -1,9 +1,11 @@
 package app.compose.appoxxo.ui.screens
 
 import android.util.Patterns
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.util.UiState
 import app.compose.appoxxo.ui.components.AppButton
@@ -50,7 +52,7 @@ fun EditNameScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Cambiar nombre", fontWeight = FontWeight.Bold) },
+                title = { Text("Cambiar nombre", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painterResource(R.drawable.ic_arrow_back), "Volver")
@@ -66,16 +68,38 @@ fun EditNameScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(24.dp)
+                .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                "Nombre actual: ${currentUser?.name ?: "—"}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Info card
+            Card(
+                shape  = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                )
+            ) {
+                Row(
+                    modifier          = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        painter            = painterResource(R.drawable.ic_person),
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                    Text(
+                        "Nombre actual: ${currentUser?.name ?: "—"}",
+                        style  = MaterialTheme.typography.bodySmall,
+                        color  = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp
+                    )
+                }
+            }
 
             AppTextField(
                 value         = name,
@@ -84,7 +108,7 @@ fun EditNameScreen(
             )
 
             AppButton(
-                text           = "Guardar",
+                text           = "Guardar cambios",
                 onClick        = { viewModel.updateName(name.trim()) },
                 modifier       = Modifier.fillMaxWidth(),
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -125,7 +149,7 @@ fun EditEmailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Cambiar correo", fontWeight = FontWeight.Bold) },
+                title = { Text("Cambiar correo", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painterResource(R.drawable.ic_arrow_back), "Volver")
@@ -141,22 +165,38 @@ fun EditEmailScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(24.dp)
+                .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                "Correo actual: ${currentUser?.email ?: "—"}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                "Se requiere tu contraseña actual para confirmar el cambio.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Info card
+            Card(
+                shape  = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                )
+            ) {
+                Row(
+                    modifier          = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        painter            = painterResource(R.drawable.ic_edit),
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                    Text(
+                        "Correo actual: ${currentUser?.email ?: "—"}",
+                        style  = MaterialTheme.typography.bodySmall,
+                        color  = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp
+                    )
+                }
+            }
 
             AppTextField(
                 value           = email,
@@ -173,40 +213,40 @@ fun EditEmailScreen(
                 label         = "Contraseña actual"
             )
 
-            val isFormValid = email.isNotBlank()
-                    && emailIsValid
-                    && email != currentUser?.email
-                    && password.isNotBlank()
-            //Card informativo antes del botón Guardar
+            // Aviso informativo
             Card(
+                shape  = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                ),
-                shape = RoundedCornerShape(12.dp)
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                )
             ) {
                 Row(
-                    modifier = Modifier.padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier              = Modifier.padding(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment     = Alignment.Top
                 ) {
                     Icon(
                         painter            = painterResource(R.drawable.ic_notifications),
                         contentDescription = null,
                         tint               = MaterialTheme.colorScheme.primary,
-                        modifier           = Modifier.size(18.dp)
+                        modifier           = Modifier.size(16.dp).padding(top = 1.dp)
                     )
                     Text(
-                        "Se enviará un correo de verificación a la nueva dirección. " +
-                                "El cambio se aplicará después de verificarlo.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        "Se enviará un correo de verificación a la nueva dirección. El cambio se aplicará después de verificarlo.",
+                        style  = MaterialTheme.typography.bodySmall,
+                        color  = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
                     )
                 }
             }
 
+            val isFormValid = email.isNotBlank()
+                    && emailIsValid
+                    && email != currentUser?.email
+                    && password.isNotBlank()
 
             AppButton(
-                text           = "Guardar",
+                text           = "Guardar cambios",
                 onClick        = { viewModel.updateEmail(email.trim(), password) },
                 modifier       = Modifier.fillMaxWidth(),
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -225,11 +265,11 @@ fun ChangePasswordScreen(
     viewModel: AuthViewModel,
     onBack: () -> Unit
 ) {
-    var currentPassword   by remember { mutableStateOf("") }
-    var newPassword       by remember { mutableStateOf("") }
-    var confirmPassword   by remember { mutableStateOf("") }
-    val uiState           by viewModel.uiState.collectAsState()
-    val snackbarHostState  = remember { SnackbarHostState() }
+    var currentPassword  by remember { mutableStateOf("") }
+    var newPassword      by remember { mutableStateOf("") }
+    var confirmPassword  by remember { mutableStateOf("") }
+    val uiState          by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val passwordsMatch = confirmPassword.isEmpty() || confirmPassword == newPassword
 
@@ -247,7 +287,7 @@ fun ChangePasswordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Cambiar contraseña", fontWeight = FontWeight.Bold) },
+                title = { Text("Cambiar contraseña", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painterResource(R.drawable.ic_arrow_back), "Volver")
@@ -263,9 +303,10 @@ fun ChangePasswordScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(24.dp)
+                .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             PasswordTextField(
@@ -305,7 +346,7 @@ fun ChangePasswordScreen(
     }
 }
 
-// ─── Agregar Contraseña (usuarios de Google) ──────────────────────────────────
+// ─── Agregar Contraseña ───────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -313,10 +354,10 @@ fun AddPasswordScreen(
     viewModel: AuthViewModel,
     onBack: () -> Unit
 ) {
-    var newPassword       by remember { mutableStateOf("") }
-    var confirmPassword   by remember { mutableStateOf("") }
-    val uiState           by viewModel.uiState.collectAsState()
-    val snackbarHostState  = remember { SnackbarHostState() }
+    var newPassword      by remember { mutableStateOf("") }
+    var confirmPassword  by remember { mutableStateOf("") }
+    val uiState          by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val passwordsMatch = confirmPassword.isEmpty() || confirmPassword == newPassword
 
@@ -334,7 +375,7 @@ fun AddPasswordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Agregar contraseña", fontWeight = FontWeight.Bold) },
+                title = { Text("Agregar contraseña", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painterResource(R.drawable.ic_arrow_back), "Volver")
@@ -350,21 +391,23 @@ fun AddPasswordScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(24.dp)
+                .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Aviso Google
             Card(
+                shape  = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                ),
-                shape = RoundedCornerShape(12.dp)
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                )
             ) {
                 Row(
-                    modifier              = Modifier.padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment     = Alignment.CenterVertically
+                    modifier              = Modifier.padding(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment     = Alignment.Top
                 ) {
                     Icon(
                         painter            = painterResource(R.drawable.ic_google),
@@ -373,10 +416,10 @@ fun AddPasswordScreen(
                         modifier           = Modifier.size(18.dp)
                     )
                     Text(
-                        "Tu cuenta usa Google. Agrega una contraseña para también " +
-                                "poder iniciar sesión con tu correo y contraseña.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        "Tu cuenta usa Google. Agrega una contraseña para también poder iniciar sesión con tu correo y contraseña.",
+                        style  = MaterialTheme.typography.bodySmall,
+                        color  = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
                     )
                 }
             }
