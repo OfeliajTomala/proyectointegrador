@@ -39,7 +39,7 @@ class AdminActivity : ComponentActivity() {
 
             authViewModel.syncUser()
 
-            // Valida el rol real del usuario cargado desde Firestore
+            // Válida el rol real del usuario cargado desde Firestore
             val user = authViewModel.currentUser.value
             if (user == null || user.role != UserRole.ADMIN) {
                 finish()

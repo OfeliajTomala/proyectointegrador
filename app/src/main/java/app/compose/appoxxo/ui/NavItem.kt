@@ -1,6 +1,5 @@
 package app.compose.appoxxo.ui
 
-import app.compose.appoxxo.R
 sealed class NavItem(val route: String) {
     //Splash
     object Splash : NavItem("splash")
@@ -22,7 +21,7 @@ sealed class NavItem(val route: String) {
     object Alerts      : NavItem("alerts")
     object Profile     : NavItem("profile")
 
-    // ─── Politicas de seguridad y manual de usuario ───────────────────────────────────────────────
+    // ─── Políticas de seguridad y manual de usuario ───────────────────────────────────────────────
     object Help           : NavItem("help")
     object SecurityPolicy : NavItem("security_policy")
 
@@ -46,17 +45,4 @@ sealed class NavItem(val route: String) {
     // ─── Admin ───────────────────────────────────────────────────
     object Users : NavItem("users")
 }
-// Ítems del Bottom Navigation Bar
-data class BottomNavItem(
-    val navItem: NavItem,
-    val label: String,
-    val iconRes: Int
-)
 
-val bottomNavItems = listOf(
-    BottomNavItem(NavItem.Dashboard,  "Home",        R.drawable.ic_home),
-    BottomNavItem(NavItem.ProductList,  "Productos", R.drawable.ic_shopping_cart),
-    BottomNavItem(NavItem.Alerts,     "Alertas",     R.drawable.ic_notifications),
-    BottomNavItem(NavItem.Help,        "Ayuda",       R.drawable.ic_help),
-    BottomNavItem(NavItem.Profile,    "Perfil",      R.drawable.ic_person)
-)

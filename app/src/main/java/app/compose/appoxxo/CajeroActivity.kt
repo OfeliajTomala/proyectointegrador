@@ -34,7 +34,7 @@ class CajeroActivity : ComponentActivity() {
             // Recarga el usuario real desde Firestore (no confía en caché ni en el Intent extra)
             authViewModel.syncUser()
 
-            // Valida el rol real — si no es CAJERO, cierra la Activity
+            // Válida el rol real — si no es CAJERO, cierra la Activity
             val user = authViewModel.currentUser.value
             if (user == null || user.role != UserRole.CAJERO) {
                 finish()

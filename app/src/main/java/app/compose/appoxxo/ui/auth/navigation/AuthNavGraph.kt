@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import app.compose.appoxxo.data.model.UserRole
 import app.compose.appoxxo.data.util.UiState
+import app.compose.appoxxo.ui.NavItem
 import app.compose.appoxxo.ui.auth.screens.LoginScreen
 import app.compose.appoxxo.ui.auth.screens.RegisterScreen
 import app.compose.appoxxo.ui.auth.screens.SplashScreen
@@ -27,7 +28,7 @@ fun AuthNavGraph(
     // FIX #2: la race condition ocurría porque currentUser puede llegar
     // DESPUÉS de que uiState cambie a Success.
     // Solución: observamos AMBOS estados y solo navegamos cuando
-    // uiState == Success Y currentUser != null (con rol definido).
+    // uiState == Success Y currentUser!= null (con rol definido).
     LaunchedEffect(uiState, currentUser) {
         if (uiState is UiState.Success) {
             val role = currentUser?.role
@@ -43,7 +44,7 @@ fun AuthNavGraph(
         navController    = navController,
         startDestination = "splash"
     ) {
-        composable("splash") {
+        composable(NavItem.Splash.route) {
             SplashScreen(
                 onNavigateToLogin = {
                     navController.navigate("login") {
@@ -57,7 +58,7 @@ fun AuthNavGraph(
             )
         }
 
-        composable("login") {
+        composable(NavItem.Login.route) {
             LoginScreen(
                 viewModel      = authViewModel,
                 onLoginSuccess = {
@@ -69,7 +70,7 @@ fun AuthNavGraph(
             )
         }
 
-        composable("register") {
+        composable(NavItem.Register.route) {
             RegisterScreen(
                 viewModel         = authViewModel,
                 onRegisterSuccess = {

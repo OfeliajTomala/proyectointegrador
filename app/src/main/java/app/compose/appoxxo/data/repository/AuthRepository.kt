@@ -256,12 +256,6 @@ class AuthRepository(
         } catch (_: Exception) { cachedUser }
     }
 
-    // ─── Providers del usuario ────────────────────────────────────
-    // Detecta si tiene email/password, Google, o ambos
-
-    fun getUserProviders(): List<String> =
-        auth.currentUser?.providerData?.map { it.providerId } ?: emptyList()
-
     // ─── Admin ────────────────────────────────────────────────────
 
     suspend fun getUsers(): Result<List<User>> {
