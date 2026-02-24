@@ -102,8 +102,11 @@ fun EditProductScreen(
 
             AppTextField(value = name, onValueChange = { name = it }, label = "Nombre del producto")
             AppTextField(
-                value = code, onValueChange = { code = it },
-                label = "Código", singleLine = false
+                value = code,
+                onValueChange = { if (it.length <= 10) code = it.uppercase() },
+                label = "Código",
+                isError       = code.isNotEmpty() && code.length < 5,
+                errorMessage  = "El código debe tener entre 5 y 10 caracteres"
             )
             AppTextField(
                 value = price, onValueChange = { price = it }, label = "Precio",
@@ -121,6 +124,8 @@ fun EditProductScreen(
             val isFormValid = name.isNotBlank()
                     && price.toDoubleOrNull() != null
                     && stock.toIntOrNull() != null
+                    && (code.isEmpty() || code.length >= 5)
+
 
             AppButton(
                 text = if (imageUri != null) "Actualizar con nueva imagen" else "Actualizar producto",

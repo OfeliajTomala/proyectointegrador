@@ -14,9 +14,10 @@ import java.util.UUID
  *                      con política pública de lectura)
  */
 class ImageRepository(
-    private val supabase: SupabaseClient,
-    private val context: Context
+    supabase: SupabaseClient,
+    context: Context
 ) {
+    private val context = context.applicationContext
     private val bucket = supabase.storage["product-images"]
 
     /**

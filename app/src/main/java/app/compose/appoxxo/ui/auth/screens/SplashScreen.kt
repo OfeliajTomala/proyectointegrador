@@ -1,4 +1,4 @@
-package app.compose.appoxxo.ui.screens
+package app.compose.appoxxo.ui.auth.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.airbnb.lottie.compose.*
 import app.compose.appoxxo.R
+import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
@@ -16,17 +17,26 @@ fun SplashScreen(
     isLoggedIn: Boolean
 ) {
     val composition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(R.raw.splash_animation) // ← tu JSON aquí
+        LottieCompositionSpec.RawRes(R.raw.splash_animation)
     )
     val progress by animateLottieCompositionAsState(
-        composition  = composition,
-        iterations   = 1,
-        isPlaying    = true
+        composition = composition,
+        iterations  = 1,
+        isPlaying   = true
     )
 
-    // Cuando termina la animación navega según sesión
     LaunchedEffect(progress) {
         if (progress == 1f) {
+            delay(300)
+            if (isLoggedIn) onNavigateToDashboard()
+            else onNavigateToLogin()
+        }
+    }
+
+    // Timeout de seguridad
+    LaunchedEffect(Unit) {
+        delay(4000)
+        if (progress < 1f) {
             if (isLoggedIn) onNavigateToDashboard()
             else onNavigateToLogin()
         }

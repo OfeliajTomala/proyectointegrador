@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Permiso de Internet (obligatorio para Firebase) -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
-        tools:ignore="PhotoAndVideoPolicy,SelectedPhotoAccess" />  <!-- Android 13+ -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"
+        tools:ignore="PhotoAndVideoPolicy,SelectedPhotoAccess" /> <!-- Android 13+ -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
     <application
         android:name=".AppApplication"
@@ -19,6 +20,29 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppOxxo">
+
+        <!-- Activity para CAJERO -->
+        <activity
+            android:name=".CajeroActivity"
+            android:exported="false"
+            android:label="Cajero"
+            android:theme="@style/Theme.AppOxxo" />
+
+        <!-- Activity para ENCARGADO -->
+        <activity
+            android:name=".EncargadoActivity"
+            android:exported="false"
+            android:label="Encargado"
+            android:theme="@style/Theme.AppOxxo" />
+
+        <!-- Activity  para ADMIN -->
+        <activity
+            android:name=".AdminActivity"
+            android:exported="false"
+            android:label="Admin"
+            android:theme="@style/Theme.AppOxxo" />
+
+        <!-- Punto de entrada: Login / Auth -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -26,7 +50,6 @@
             android:theme="@style/Theme.AppOxxo">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

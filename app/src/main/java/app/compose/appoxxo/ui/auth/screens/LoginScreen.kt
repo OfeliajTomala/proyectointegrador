@@ -1,4 +1,4 @@
-package app.compose.appoxxo.ui.screens
+package app.compose.appoxxo.ui.auth.screens
 
 
 import androidx.compose.foundation.layout.*
@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -108,7 +109,7 @@ fun LoginScreen(
                     Icon(
                         painter            = painterResource(id = R.drawable.ic_google),
                         contentDescription = "Google",
-                        tint               = androidx.compose.ui.graphics.Color.Unspecified,
+                        tint               = Color.Unspecified,
                         modifier           = Modifier.size(20.dp)
                     )
                 }

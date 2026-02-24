@@ -36,17 +36,23 @@ fun AddProductScreen(
     // ── Validación y parseo de precio ─────────────────────────────
     fun isValidPrice(value: String): Boolean {
         if (value.isEmpty()) return true
-        // Permite números enteros, decimales con 1-2 cifras o iniciar con punto (como ".5")
-        return value.matches(Regex("""^(\d{1,10}|\d{0,10}\.\d{1,2}|\.\d{1,2})$"""))
+
+        return value.matches(
+            Regex("""^\d{0,10}([.,]\d{0,2})?$""")
+        )
     }
 
     fun parsePrice(value: String): Double {
+        if (value.isEmpty()) return 0.0
+
+        val normalized = value.replace(",", ".")
+
         return when {
-            value.isEmpty()        -> 0.0
-            value.startsWith(".")  -> ("0$value").toDouble()
-            else                   -> value.toDouble()
+            normalized.startsWith(".") -> ("0$normalized").toDouble()
+            else -> normalized.toDouble()
         }
     }
+
 
     fun isValidStock(value: String): Boolean {
         if (value.isEmpty()) return true
@@ -111,9 +117,11 @@ fun AddProductScreen(
 
             AppTextField(
                 value         = code,
-                onValueChange = { code = it },
+                onValueChange = { if (it.length <= 10) code = it.uppercase() },
                 label         = "Código",
-                singleLine    = false
+                isError       = code.isNotEmpty() && code.length < 5,
+                errorMessage  = "El código debe tener entre 5 y 10 caracteres"
+
             )
 
             // Precio — teclado numérico decimal
@@ -141,6 +149,7 @@ fun AddProductScreen(
             val isFormValid = name.isNotBlank()
                     && parsePrice(price) >= 0
                     && stock.toIntOrNull() != null
+                    && (code.isEmpty() || code.length >= 5)
 
             AppButton(
                 text           = "Guardar producto",

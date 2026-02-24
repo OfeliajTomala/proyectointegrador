@@ -26,6 +26,8 @@ fun ProductCard(
     onDelete: () -> Unit,
     onViewMovements: (() -> Unit)? = null
 ) {
+    val hasImage = product.imageUrl.isNotEmpty()
+
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(16.dp),
@@ -39,45 +41,51 @@ fun ProductCard(
         )
     ) {
         Column {
-            // ── Imagen ────────────────────────────────────────────
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                if (product.imageUrl.isNotEmpty()) {
+            // ── Imagen — FIX #1: solo se muestra si el producto tiene imagen ──
+            if (hasImage) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
                     AsyncImage(
                         model              = product.imageUrl,
                         contentDescription = product.name,
                         modifier           = Modifier.fillMaxSize(),
                         contentScale       = ContentScale.Crop
                     )
-                } else {
-                    Icon(
-                        painter            = painterResource(id = R.drawable.ic_inventory),
-                        contentDescription = null,
-                        modifier           = Modifier
-                            .size(48.dp)
-                            .align(Alignment.Center),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                    )
-                }
-
-                Box(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)) {
-                    StockAlertChip(stock = product.stock)
+                    Box(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)) {
+                        StockAlertChip(stock = product.stock)
+                    }
                 }
             }
 
             // ── Info ──────────────────────────────────────────────
             Column(modifier = Modifier.padding(14.dp)) {
-                Text(
-                    text       = product.name,
-                    style      = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines   = 1
-                )
+
+                // Si no hay imagen, el chip de stock va junto al nombre
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text       = product.name,
+                        style      = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines   = 1,
+                        modifier   = Modifier.weight(1f)
+                    )
+                    // FIX #1: el chip siempre visible, pero cuando no hay imagen
+                    // se posiciona aquí en lugar del Box superior
+                    if (!hasImage) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        StockAlertChip(stock = product.stock)
+                    }
+                }
+
                 if (product.codigo.isNotEmpty()) {
                     Text(
                         text  = product.codigo,
@@ -85,20 +93,16 @@ fun ProductCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
                 Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment     = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text       = "$${"%.2f".format(product.price)}",
-                        style      = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color      = MaterialTheme.colorScheme.primary,
-                        fontSize   = 20.sp
-                    )
-                }
+
+                Text(
+                    text       = "$${"%.2f".format(product.price)}",
+                    style      = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.primary,
+                    fontSize   = 20.sp
+                )
 
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 10.dp),
@@ -129,8 +133,6 @@ fun ProductCard(
                                 modifier           = Modifier.size(20.dp)
                             )
                         }
-                    }
-                    if (role == UserRole.ADMIN || role == UserRole.ENCARGADO) {
                         IconButton(onClick = onDelete) {
                             Icon(
                                 painter            = painterResource(id = R.drawable.ic_delete),

@@ -1,8 +1,6 @@
-package app.compose.appoxxo.ui.navigation
-
+package app.compose.appoxxo.ui
 
 import app.compose.appoxxo.R
-
 sealed class NavItem(val route: String) {
     //Splash
     object Splash : NavItem("splash")

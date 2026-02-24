@@ -1,4 +1,4 @@
-package app.compose.appoxxo.ui.screens
+package app.compose.appoxxo.ui.admin.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

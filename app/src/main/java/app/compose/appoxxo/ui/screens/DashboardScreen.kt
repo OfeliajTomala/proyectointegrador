@@ -16,6 +16,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.compose.appoxxo.R
+import app.compose.appoxxo.data.util.UiState
 import app.compose.appoxxo.ui.components.AppSectionCard
 import app.compose.appoxxo.ui.components.AppStatCard
 import app.compose.appoxxo.viewmodel.DashboardViewModel
@@ -29,7 +30,6 @@ fun DashboardScreen(
     val stats   by viewModel.stats.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
 
-    // Refresca cada vez que se entra al Dashboard
     LaunchedEffect(Unit) { viewModel.loadStats() }
 
     LazyColumn(
@@ -40,7 +40,7 @@ fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        // ─── Header con botón refrescar ───────────────────────────
+        // ─── Header ───────────────────────────────────────────────
         item {
             Row(
                 modifier              = Modifier.fillMaxWidth(),
@@ -54,7 +54,7 @@ fun DashboardScreen(
                 )
                 IconButton(onClick = { viewModel.loadStats() }) {
                     Icon(
-                        painter            = painterResource(id = R.drawable.ic_swap_vert),
+                        painter            = painterResource(id = R.drawable.ic_update),
                         contentDescription = "Actualizar",
                         tint               = MaterialTheme.colorScheme.primary
                     )
@@ -62,13 +62,13 @@ fun DashboardScreen(
             }
         }
 
-        // ─── Estadísticas generales ───────────────────────────────
+        // ─── Estadísticas de productos ────────────────────────────
         item {
             AppSectionCard(
-                title    = "",
+                title    = "Productos",
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (uiState is app.compose.appoxxo.data.util.UiState.Loading) {
+                if (uiState is UiState.Loading) {
                     Box(
                         modifier         = Modifier.fillMaxWidth().height(100.dp),
                         contentAlignment = Alignment.Center
@@ -79,7 +79,7 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         AppStatCard(
-                            title       = "Total Productos",
+                            title       = "Activos",
                             value       = stats.totalProducts.toString(),
                             modifier    = Modifier.weight(1f),
                             accentColor = MaterialTheme.colorScheme.primary,
@@ -92,6 +92,29 @@ fun DashboardScreen(
                                 )
                             }
                         )
+                        // FIX (requisitos): muestra total de productos eliminados
+                        AppStatCard(
+                            title       = "Eliminados",
+                            value       = stats.totalDeletedProducts.toString(),
+                            modifier    = Modifier.weight(1f),
+                            accentColor = MaterialTheme.colorScheme.error,
+                            icon = {
+                                Icon(
+                                    painter            = painterResource(R.drawable.ic_delete),
+                                    contentDescription = null,
+                                    tint               = MaterialTheme.colorScheme.error,
+                                    modifier           = Modifier.size(20.dp)
+                                )
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         AppStatCard(
                             title       = "Stock Total",
                             value       = stats.totalStock.toString(),
@@ -106,14 +129,6 @@ fun DashboardScreen(
                                 )
                             }
                         )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier              = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
                         AppStatCard(
                             title       = "Stock Bajo",
                             value       = stats.lowStockCount.toString(),
@@ -128,6 +143,14 @@ fun DashboardScreen(
                                 )
                             }
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         AppStatCard(
                             title       = "Valor Inventario",
                             value       = "$${"%.0f".format(stats.totalInventoryValue)}",
@@ -142,7 +165,51 @@ fun DashboardScreen(
                                 )
                             }
                         )
+                        Spacer(modifier = Modifier.weight(1f))
                     }
+                }
+            }
+        }
+
+        // ─── Estadísticas de movimientos ──────────────────────────
+        // FIX (requisitos): sección de movimientos con total y eliminados
+        item {
+            AppSectionCard(
+                title    = "Movimientos",
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    AppStatCard(
+                        title       = "Total",
+                        value       = stats.totalMovements.toString(),
+                        modifier    = Modifier.weight(1f),
+                        accentColor = MaterialTheme.colorScheme.primary,
+                        icon = {
+                            Icon(
+                                painter            = painterResource(R.drawable.ic_list),
+                                contentDescription = null,
+                                tint               = MaterialTheme.colorScheme.primary,
+                                modifier           = Modifier.size(20.dp)
+                            )
+                        }
+                    )
+                    AppStatCard(
+                        title       = "Eliminados",
+                        value       = stats.totalDeletedMovements.toString(),
+                        modifier    = Modifier.weight(1f),
+                        accentColor = MaterialTheme.colorScheme.error,
+                        icon = {
+                            Icon(
+                                painter            = painterResource(R.drawable.ic_delete),
+                                contentDescription = null,
+                                tint               = MaterialTheme.colorScheme.error,
+                                modifier           = Modifier.size(20.dp)
+                            )
+                        }
+                    )
                 }
             }
         }
