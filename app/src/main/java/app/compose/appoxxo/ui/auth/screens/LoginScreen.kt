@@ -89,7 +89,7 @@ fun LoginScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        painter            = painterResource(id = R.drawable.ic_inventory),
+                        painter            = painterResource(id = R.drawable.ic_store),
                         contentDescription = null,
                         tint               = Color.White,
                         modifier           = Modifier.size(34.dp)
