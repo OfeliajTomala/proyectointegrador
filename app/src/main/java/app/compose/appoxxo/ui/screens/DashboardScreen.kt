@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +21,7 @@ import app.compose.appoxxo.R
 import app.compose.appoxxo.data.util.UiState
 import app.compose.appoxxo.ui.components.AppSectionCard
 import app.compose.appoxxo.ui.components.AppStatCard
+import app.compose.appoxxo.ui.theme.ThemeConfig
 import app.compose.appoxxo.viewmodel.DashboardViewModel
 
 @Composable
@@ -52,13 +54,14 @@ fun DashboardScreen(
             ) {
                 Column {
                     Text(
-                        "Dashboard",
+                        "OXXXO",
                         style      = MaterialTheme.typography.titleLarge,
+                        color  = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize   = 22.sp
                     )
                     Text(
-                        "Resumen del inventario",
+                        "Más cerca de tu hogar",
                         style  = MaterialTheme.typography.bodySmall,
                         color  = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
@@ -72,6 +75,49 @@ fun DashboardScreen(
                         modifier           = Modifier.size(22.dp)
                     )
                 }
+            }
+        }
+
+        // ─── Hero Banner ──────────────────────────────────────────  ← NUEVO
+        item {
+
+            val palette = ThemeConfig.selectedPalette
+            val gradientColors = if (ThemeConfig.isDarkMode) {
+                listOf(palette.secondaryDark, palette.primaryDark)
+            } else {
+                listOf(palette.secondary, palette.primary)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .background(
+                        brush = Brush.horizontalGradient(gradientColors),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                    .padding(20.dp)
+            ) {
+                Column {
+                    Text(
+                        "Bienvenido 👋",
+                        color      = Color.White,
+                        fontSize   = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Gestión de inventario de OXXXO",
+                        color    = Color.White.copy(alpha = 0.85f),
+                        fontSize = 13.sp
+                    )
+                }
+                Icon(
+                    painter            = painterResource(R.drawable.ic_store),
+                    contentDescription = null,
+                    modifier           = Modifier
+                        .size(64.dp)
+                        .align(Alignment.CenterEnd),
+                    tint = Color.White.copy(alpha = 0.2f)
+                )
             }
         }
 
@@ -99,19 +145,42 @@ fun DashboardScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     AppStatCard(
-                        title       = "Activos",
+                        title       = "Productos",
                         value       = stats.totalProducts.toString(),
                         modifier    = Modifier.weight(1f),
-                        accentColor = MaterialTheme.colorScheme.primary,
+                        accentColor =  Color(0xFF1A6E1D),
                         icon = {
                             Icon(
                                 painter            = painterResource(R.drawable.ic_inventory),
                                 contentDescription = null,
-                                tint               = MaterialTheme.colorScheme.primary,
+                                tint               = Color(0xFF1A6E1D),
                                 modifier           = Modifier.size(18.dp)
                             )
                         }
                     )
+                    AppStatCard(
+                        title       = "Stock Total",
+                        value       = stats.totalStock.toString(),
+                        modifier    = Modifier.weight(1f),
+                        accentColor = Color(0xFF009688),
+                        icon = {
+                            Icon(
+                                painter            = painterResource(R.drawable.ic_layers),
+                                contentDescription = null,
+                                tint               = Color(0xFF009688),
+                                modifier           = Modifier.size(18.dp)
+                            )
+                        }
+                    )
+
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     AppStatCard(
                         title       = "Eliminados",
                         value       = stats.totalDeletedProducts.toString(),
@@ -126,38 +195,17 @@ fun DashboardScreen(
                             )
                         }
                     )
-                }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    AppStatCard(
-                        title       = "Stock Total",
-                        value       = stats.totalStock.toString(),
-                        modifier    = Modifier.weight(1f),
-                        accentColor = MaterialTheme.colorScheme.tertiary,
-                        icon = {
-                            Icon(
-                                painter            = painterResource(R.drawable.ic_layers),
-                                contentDescription = null,
-                                tint               = MaterialTheme.colorScheme.tertiary,
-                                modifier           = Modifier.size(18.dp)
-                            )
-                        }
-                    )
                     AppStatCard(
                         title       = "Stock Bajo",
                         value       = stats.lowStockCount.toString(),
                         modifier    = Modifier.weight(1f),
-                        accentColor = MaterialTheme.colorScheme.error,
+                        accentColor = Color(0xFFFF5722),
                         icon = {
                             Icon(
                                 painter            = painterResource(R.drawable.ic_warning),
                                 contentDescription = null,
-                                tint               = MaterialTheme.colorScheme.error,
+                                tint               = Color(0xFFFF5722),
                                 modifier           = Modifier.size(18.dp)
                             )
                         }
@@ -188,7 +236,7 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .size(42.dp)
                                 .background(
-                                    Color(0xFF2E7D32).copy(alpha = 0.1f),
+                                    Color(0xFF046911).copy(alpha = 0.1f),
                                     RoundedCornerShape(12.dp)
                                 ),
                             contentAlignment = Alignment.Center
@@ -196,7 +244,7 @@ fun DashboardScreen(
                             Icon(
                                 painter            = painterResource(R.drawable.ic_attach_money),
                                 contentDescription = null,
-                                tint               = Color(0xFF2E7D32),
+                                tint               = Color(0xFF046911),
                                 modifier           = Modifier.size(22.dp)
                             )
                         }
