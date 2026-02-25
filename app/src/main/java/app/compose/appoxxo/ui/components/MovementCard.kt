@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,8 +27,10 @@ fun MovementCard(
     onDelete: (() -> Unit)? = null
 ) {
     val isEntrada   = movement.type == MovementType.ENTRADA
-    val accentColor = if (isEntrada) MaterialTheme.colorScheme.primary
-    else MaterialTheme.colorScheme.error
+
+    // Colores fijos: Verde para entrada, Rojo para salida
+    val accentColor = if (isEntrada) Color(0xFF2E7D32) else Color(0xFFD32F2F)
+    val backgroundAlpha = 0.1f
 
     val dateStr = remember(movement.date) {
         try {
@@ -59,7 +62,7 @@ fun MovementCard(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .background(accentColor.copy(alpha = 0.1f)),
+                    .background(accentColor.copy(alpha = backgroundAlpha)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -67,7 +70,7 @@ fun MovementCard(
                         id = if (isEntrada) R.drawable.ic_arrow_downward
                         else R.drawable.ic_arrow_upward
                     ),
-                    contentDescription = null,
+                    contentDescription = if (isEntrada) "Entrada" else "Salida",
                     tint               = accentColor,
                     modifier           = Modifier.size(20.dp)
                 )
@@ -111,7 +114,7 @@ fun MovementCard(
                 )
                 Surface(
                     shape = RoundedCornerShape(6.dp),
-                    color = accentColor.copy(alpha = 0.1f)
+                    color = accentColor.copy(alpha = backgroundAlpha)
                 ) {
                     Text(
                         if (isEntrada) "ENTRADA" else "SALIDA",

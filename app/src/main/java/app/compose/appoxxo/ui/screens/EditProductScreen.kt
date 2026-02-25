@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.runtime.*
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -14,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
+import app.compose.appoxxo.data.model.ProductCategory
 import app.compose.appoxxo.data.util.UiState
 import app.compose.appoxxo.ui.components.AppButton
 import app.compose.appoxxo.ui.components.AppTextField
@@ -38,6 +41,8 @@ fun EditProductScreen(
     var price    by remember(product) { mutableStateOf(product?.price?.toString() ?: "") }
     var stock    by remember(product) { mutableStateOf(product?.stock?.toString() ?: "") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var category         by remember { mutableStateOf(ProductCategory.OTROS) }
+    var categoryExpanded by remember { mutableStateOf(false) }
 
     val uiState           by viewModel.uiState.collectAsState()
     val snackbarHostState  = remember { SnackbarHostState() }
@@ -53,32 +58,14 @@ fun EditProductScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Editar producto", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-                navigationIcon = {
-                    IconButton(onClick = onProductUpdated) {
-                        Icon(painterResource(id = R.drawable.ic_arrow_back), "Volver")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        if (product == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (product == null) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                return@Box
             }
-            return@Scaffold
-        }
-
         Column(
+
             modifier = Modifier
-                .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
@@ -107,15 +94,57 @@ fun EditProductScreen(
             AppTextField(
                 value         = name,
                 onValueChange = { name = it },
-                label         = "Nombre del producto"
+                label         = "Nombre del producto",
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_product),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             )
+
+            ExposedDropdownMenuBox(
+                expanded         = categoryExpanded,
+                onExpandedChange = { categoryExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value         = category.label,
+                    onValueChange = {},
+                    readOnly      = true,
+                    label         = { Text("Categoría") },
+                    trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+                    colors        = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                )
+                ExposedDropdownMenu(
+                    expanded         = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false }
+                ) {
+                    ProductCategory.entries.forEach { cat ->
+                        DropdownMenuItem(
+                            text    = { Text(cat.label) },
+                            onClick = { category = cat; categoryExpanded = false }
+                        )
+                    }
+                }
+            }
 
             AppTextField(
                 value         = code,
                 onValueChange = { if (it.length <= 10) code = it.uppercase() },
                 label         = "Código",
                 isError       = code.isNotEmpty() && code.length < 5,
-                errorMessage  = "El código debe tener entre 5 y 10 caracteres"
+                errorMessage  = "El código debe tener entre 5 y 10 caracteres",
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_code),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             )
 
             AppTextField(
@@ -123,7 +152,15 @@ fun EditProductScreen(
                 onValueChange = { price = it },
                 label         = "Precio",
                 isError       = price.isNotEmpty() && price.toDoubleOrNull() == null,
-                errorMessage  = "Ingresa un número válido"
+                errorMessage  = "Ingresa un número válido",
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_attach_money),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             )
 
             AppTextField(
@@ -131,7 +168,15 @@ fun EditProductScreen(
                 onValueChange = { stock = it },
                 label         = "Stock",
                 isError       = stock.isNotEmpty() && stock.toIntOrNull() == null,
-                errorMessage  = "Ingresa un número entero"
+                errorMessage  = "Ingresa un número entero",
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_inventory),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             )
 
             val isFormValid = name.isNotBlank()
@@ -148,7 +193,8 @@ fun EditProductScreen(
                             name   = name.trim(),
                             codigo = code.trim(),
                             price  = price.toDouble(),
-                            stock  = stock.toInt()
+                            stock  = stock.toInt(),
+                            category = category
                         ),
                         imageUri = imageUri
                     )
@@ -161,5 +207,9 @@ fun EditProductScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier  = Modifier.align(Alignment.BottomCenter)
+            )
     }
 }

@@ -11,7 +11,8 @@ import androidx.navigation.*
 import androidx.navigation.compose.*
 import app.compose.appoxxo.R
 import app.compose.appoxxo.ui.NavItem
-import app.compose.appoxxo.ui.components.AppDrawerContent
+import app.compose.appoxxo.ui.cajero.screens.CajeroDrawerContent
+import app.compose.appoxxo.ui.cajero.screens.ResumenScreen
 import app.compose.appoxxo.ui.screens.*
 import app.compose.appoxxo.viewmodel.*
 import kotlinx.coroutines.launch
@@ -39,16 +40,15 @@ fun CajeroNavGraph(
         drawerState     = drawerState,
         gesturesEnabled = true,
         drawerContent   = {
-            AppDrawerContent(
+            CajeroDrawerContent(
                 currentRoute = currentRoute,
-                isAdmin      = false,
-                currentUser  = currentUser,
-                onNavigate   = { route ->
+                currentUser = currentUser,
+                onNavigate = { route ->
                     scope.launch { drawerState.close() }
                     navController.navigate(route) {
                         popUpTo(navController.graph.startDestinationId) { saveState = true }
                         launchSingleTop = true
-                        restoreState    = true
+                        restoreState = true
                     }
                 },
                 onLogout = onLogout
@@ -61,8 +61,8 @@ fun CajeroNavGraph(
                     title = {
                         Text(
                             text = when {
-                                currentRoute == NavItem.Dashboard.route             -> "Dashboard"
                                 currentRoute == NavItem.ProductList.route           -> "Productos"
+                                currentRoute == NavItem.Resumen.route               -> "Resumen"
                                 currentRoute == NavItem.Movements.route             -> "Movimientos"
                                 currentRoute?.startsWith("movement_detail") == true -> "Movimientos"
                                 currentRoute == NavItem.Alerts.route                -> "Alertas"
@@ -85,30 +85,21 @@ fun CajeroNavGraph(
                             )
                         }
                     },
-
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 )
             },
-            bottomBar = { AppBottomBarCajero(navController, dashboardViewModel) }
+            bottomBar = { AppBottomBarCajero(navController) }
         ) { innerPadding ->
 
             NavHost(
                 navController    = navController,
-                startDestination = NavItem.Dashboard.route,
+                startDestination = NavItem.ProductList.route,
                 modifier         = Modifier.padding(innerPadding)
             ) {
 
-                composable(NavItem.Dashboard.route) {
-                    LaunchedEffect(Unit) { dashboardViewModel.loadStats() }
-                    DashboardScreen(
-                        viewModel            = dashboardViewModel,
-                        onNavigateToProducts = { navController.navigate(NavItem.ProductList.route) },
-                        onNavigateToAlerts   = { navController.navigate(NavItem.Alerts.route) }
-                    )
-                }
-
+                // ── Productos (inicio) ────────────────────────────
                 composable(NavItem.ProductList.route) {
                     ProductListScreen(
                         viewModel       = productViewModel,
@@ -119,6 +110,17 @@ fun CajeroNavGraph(
                     )
                 }
 
+                // ── Resumen ───────────────────────────────────────
+                composable(NavItem.Resumen.route) {
+                    LaunchedEffect(Unit) { dashboardViewModel.loadStats() }
+                    ResumenScreen(
+                        viewModel            = dashboardViewModel,
+                        onNavigateToProducts = { navController.navigate(NavItem.ProductList.route) },
+                        onNavigateToAlerts   = { navController.navigate(NavItem.Alerts.route) }
+                    )
+                }
+
+                // ── Movimientos ───────────────────────────────────
                 composable(NavItem.Movements.route) {
                     MovementsScreen(viewModel = productViewModel, canDelete = true)
                 }
@@ -140,10 +142,12 @@ fun CajeroNavGraph(
                     )
                 }
 
+                // ── Alertas ───────────────────────────────────────
                 composable(NavItem.Alerts.route) {
                     AlertsScreen(viewModel = productViewModel)
                 }
 
+                // ── Perfil y sub-pantallas ────────────────────────
                 composable(NavItem.Profile.route) {
                     LaunchedEffect(Unit) {
                         authViewModel.syncEmail()
@@ -176,7 +180,7 @@ fun CajeroNavGraph(
                     SecurityPolicyScreen(onBack = { navController.popBackStack() })
                 }
                 composable(NavItem.Help.route) {
-                    HelpScreen(onBack = { navController.popBackStack() })
+                    HelpScreen()
                 }
             }
         }
@@ -184,33 +188,28 @@ fun CajeroNavGraph(
 }
 
 @Composable
-private fun AppBottomBarCajero(
-    navController: NavHostController,
-    dashboardViewModel: DashboardViewModel
-) {
+private fun AppBottomBarCajero(navController: NavHostController) {
     val entry   by navController.currentBackStackEntryAsState()
     val current  = entry?.destination?.route
 
     NavigationBar {
         listOf(
-            Triple(NavItem.Dashboard.route,   "Home",      R.drawable.ic_home),
-            Triple(NavItem.ProductList.route, "Productos", R.drawable.ic_shopping_cart),
-            Triple(NavItem.Alerts.route,      "Alertas",   R.drawable.ic_notifications),
-            Triple(NavItem.Help.route,        "Ayuda",     R.drawable.ic_help),
-            Triple(NavItem.Profile.route,     "Perfil",    R.drawable.ic_person)
+            Triple(NavItem.ProductList.route, "Productos",   R.drawable.ic_shopping_cart),
+            Triple(NavItem.Movements.route,   "Movimientos", R.drawable.ic_list),
+            Triple(NavItem.Alerts.route,      "Alertas",     R.drawable.ic_notifications),
+            Triple(NavItem.Profile.route,     "Perfil",      R.drawable.ic_person)
         ).forEach { (route, label, icon) ->
-            val isDashboard = route == NavItem.Dashboard.route
+            val isStart = route == NavItem.ProductList.route
             NavigationBarItem(
                 selected = current == route,
                 onClick  = {
                     navController.navigate(route) {
                         popUpTo(navController.graph.startDestinationId) {
-                            saveState = !isDashboard
+                            saveState = !isStart
                         }
                         launchSingleTop = true
-                        restoreState    = !isDashboard
+                        restoreState    = !isStart
                     }
-                    if (isDashboard) dashboardViewModel.loadStats()
                 },
                 icon  = { Icon(painterResource(icon), label) },
                 label = { Text(label) }

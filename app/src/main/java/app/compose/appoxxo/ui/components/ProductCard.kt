@@ -123,7 +123,7 @@ fun ProductCard(
                                 painter            = painterResource(id = R.drawable.ic_swap_vert),
                                 contentDescription = "Movimientos",
                                 tint               = MaterialTheme.colorScheme.secondary,
-                                modifier           = Modifier.size(19.dp)
+                                modifier           = Modifier.size(28.dp)
                             )
                         }
                     }
@@ -136,7 +136,7 @@ fun ProductCard(
                                 painter            = painterResource(id = R.drawable.ic_edit),
                                 contentDescription = "Editar",
                                 tint               = MaterialTheme.colorScheme.primary,
-                                modifier           = Modifier.size(18.dp)
+                                modifier           = Modifier.size(28.dp)
                             )
                         }
                         IconButton(
@@ -147,7 +147,7 @@ fun ProductCard(
                                 painter            = painterResource(id = R.drawable.ic_delete),
                                 contentDescription = "Eliminar",
                                 tint               = MaterialTheme.colorScheme.error,
-                                modifier           = Modifier.size(18.dp)
+                                modifier           = Modifier.size(28.dp)
                             )
                         }
                     }

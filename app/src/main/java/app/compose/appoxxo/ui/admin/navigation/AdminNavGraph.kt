@@ -215,7 +215,7 @@ fun AdminNavGraph(
                     SecurityPolicyScreen(onBack = { navController.popBackStack() })
                 }
                 composable(NavItem.Help.route) {
-                    HelpScreen(onBack = { navController.popBackStack() })
+                    HelpScreen()
                 }
             }
         }

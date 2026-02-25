@@ -6,13 +6,17 @@ import androidx.lifecycle.viewModelScope
 import app.compose.appoxxo.data.model.Movement
 import app.compose.appoxxo.data.model.MovementType
 import app.compose.appoxxo.data.model.Product
+import app.compose.appoxxo.data.model.ProductCategory
 import app.compose.appoxxo.data.repository.AuthRepository
 import app.compose.appoxxo.data.repository.ImageRepository
 import app.compose.appoxxo.data.repository.ProductRepository
 import app.compose.appoxxo.data.util.UiState
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -48,6 +52,34 @@ class ProductViewModel(
 
     private val _dateTo = MutableStateFlow<Date?>(null)
     val dateTo: StateFlow<Date?> = _dateTo
+
+    // ─── Búsqueda y filtro por categoría ─────────────────────────
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
+
+    private val _selectedCategory = MutableStateFlow<ProductCategory?>(null)
+    val selectedCategory: StateFlow<ProductCategory?> = _selectedCategory
+
+    val filteredProducts: StateFlow<List<Product>> =
+        combine(_products, _searchQuery, _selectedCategory) { products, query, category ->
+            products.filter { product ->
+                val matchesSearch = query.isBlank() ||
+                        product.name.contains(query, ignoreCase = true) ||
+                        product.codigo.contains(query, ignoreCase = true)
+                val matchesCategory = category == null || product.category == category
+                matchesSearch && matchesCategory
+            }
+        }.stateIn(
+            scope        = viewModelScope,
+            started      = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+    fun setSearchQuery(query: String)            { _searchQuery.value      = query }
+    fun setSelectedCategory(c: ProductCategory?) { _selectedCategory.value = c    }
+
+    // ─────────────────────────────────────────────────────────────
 
     private var activeProductId: String = ""
 
@@ -155,19 +187,16 @@ class ProductViewModel(
                 val userName = authRepository.getCurrentUserName() ?: ""
                 val imageUrl = _products.value.find { it.id == productId }?.imageUrl ?: ""
 
-                // Optimistic update
                 _products.value = _products.value.filter { it.id != productId }
 
                 runCatching { imageRepository.deleteProductImage(imageUrl) }
 
-                // Write — await garantiza que Firestore confirmó antes de recargar
                 repository.deleteProduct(
                     productId     = productId,
                     deletedByName = userName,
                     deletedById   = uid
                 )
 
-                // Recarga secuencial DESPUÉS del await
                 _products.value        = repository.getProducts()
                 _deletedProducts.value = repository.getDeletedProducts()
                 _allMovements.value    = repository.getAllMovements()
@@ -230,8 +259,7 @@ class ProductViewModel(
             _uiState.value = UiState.Loading
             try {
                 _allMovements.value = repository.getAllMovements()
-                _uiState.value  = UiState.Success(Unit)
-
+                _uiState.value      = UiState.Success(Unit)
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Error al cargar movimientos")
             }
@@ -297,7 +325,6 @@ class ProductViewModel(
 
                 repository.registerMovement(movement)
 
-                // Recarga secuencial tras el await del repo
                 _products.value     = repository.getProducts()
                 _movements.value    = repository.getMovementsForProduct(productId)
                 _allMovements.value = repository.getAllMovements()
@@ -318,16 +345,12 @@ class ProductViewModel(
                 val uid      = authRepository.getCurrentUserId() ?: ""
                 val userName = authRepository.getCurrentUserName() ?: ""
 
-                // Guarda referencia antes de quitar de la lista local
                 val movimientoEliminado = _allMovements.value.find { it.id == movementId }
                     ?: _movements.value.find { it.id == movementId }
 
-                // Optimistic update: quita de activos de inmediato
                 _allMovements.value = _allMovements.value.filter { it.id != movementId }
                 _movements.value    = _movements.value.filter { it.id != movementId }
 
-                // Write en Firestore — el repo hace .await() internamente,
-                // así que cuando esta línea termina Firestore ya confirmó el write
                 val affectedProductId = repository.deleteMovement(
                     movementId    = movementId,
                     deletedByName = userName,
@@ -338,7 +361,6 @@ class ProductViewModel(
                     productId.ifEmpty { movimientoEliminado?.productId ?: "" }
                 }
 
-                // Recarga secuencial DESPUÉS del await — ya no hay race condition
                 _allMovements.value     = repository.getAllMovements()
                 _deletedMovements.value = repository.getDeletedMovements()
 
@@ -350,7 +372,6 @@ class ProductViewModel(
 
                 _uiState.value = UiState.Success(Unit)
             } catch (e: Exception) {
-                // Restaura estado real si falla
                 _allMovements.value = repository.getAllMovements()
                 if (activeProductId.isNotEmpty()) {
                     _movements.value = repository.getMovementsForProduct(activeProductId)

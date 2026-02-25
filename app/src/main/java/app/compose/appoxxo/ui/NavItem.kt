@@ -21,6 +21,8 @@ sealed class NavItem(val route: String) {
     object Alerts      : NavItem("alerts")
     object Profile     : NavItem("profile")
 
+    object Resumen     : NavItem("resumen")
+
     // ─── Políticas de seguridad y manual de usuario ───────────────────────────────────────────────
     object Help           : NavItem("help")
     object SecurityPolicy : NavItem("security_policy")

@@ -28,20 +28,24 @@ fun RegisterScreen(
     onGoToLogin: () -> Unit,
     onGoogleSignIn: () -> Unit
 ) {
-    var name            by remember { mutableStateOf("") }
-    var email           by remember { mutableStateOf("") }
-    var password        by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    val uiState          by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState) {
         when (uiState) {
-            is UiState.Success -> { viewModel.resetState(); onRegisterSuccess() }
-            is UiState.Error   -> {
+            is UiState.Success -> {
+                viewModel.resetState(); onRegisterSuccess()
+            }
+
+            is UiState.Error -> {
                 snackbarHostState.showSnackbar((uiState as UiState.Error).message)
                 viewModel.resetState()
             }
+
             else -> {}
         }
     }
@@ -76,50 +80,59 @@ fun RegisterScreen(
             ) {
                 Spacer(modifier = Modifier.height(48.dp))
 
+                // ── Icono superior ──
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_person), // tu icono
+                    contentDescription = "Registro",
+                    tint = MaterialTheme.colorScheme.primary, // color del icono
+                    modifier = Modifier
+                        .size(64.dp) // tamaño del icono
+                        .padding(bottom = 16.dp) // espacio debajo del icono
+                )
                 // Header
                 Text(
                     "Crear cuenta",
-                    style      = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     "Completa los datos para registrarte",
-                    style  = MaterialTheme.typography.bodyMedium,
-                    color  = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 AppTextField(
-                    value         = name,
+                    value = name,
                     onValueChange = { name = it },
-                    label         = "Nombre completo"
+                    label = "Nombre completo"
                 )
                 Spacer(modifier = Modifier.height(14.dp))
 
                 AppTextField(
-                    value         = email,
+                    value = email,
                     onValueChange = { email = it },
-                    label         = "Correo electrónico"
+                    label = "Correo electrónico"
                 )
                 Spacer(modifier = Modifier.height(14.dp))
 
                 PasswordTextField(
-                    value                 = password,
-                    onValueChange         = { password = it },
-                    label                 = "Contraseña",
+                    value = password,
+                    onValueChange = { password = it },
+                    label = "Contraseña",
                     showStrengthIndicator = true
                 )
                 Spacer(modifier = Modifier.height(14.dp))
 
                 PasswordTextField(
-                    value         = confirmPassword,
+                    value = confirmPassword,
                     onValueChange = { confirmPassword = it },
-                    label         = "Confirmar contraseña",
-                    isError       = confirmPassword.isNotEmpty() && confirmPassword != password,
-                    errorMessage  = "Las contraseñas no coinciden"
+                    label = "Confirmar contraseña",
+                    isError = confirmPassword.isNotEmpty() && confirmPassword != password,
+                    errorMessage = "Las contraseñas no coinciden"
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))
@@ -130,58 +143,58 @@ fun RegisterScreen(
                         && password == confirmPassword
 
                 AppButton(
-                    text           = "Registrarse",
-                    onClick        = { viewModel.register(email.trim(), password, name.trim()) },
-                    modifier       = Modifier.fillMaxWidth(),
+                    text = "Registrarse",
+                    onClick = { viewModel.register(email.trim(), password, name.trim()) },
+                    modifier = Modifier.fillMaxWidth(),
                     containerColor = MaterialTheme.colorScheme.primary,
-                    enabled        = isFormValid,
-                    isLoading      = uiState is UiState.Loading
+                    enabled = isFormValid,
+                    isLoading = uiState is UiState.Loading
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier          = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     HorizontalDivider(
                         modifier = Modifier.weight(1f),
-                        color    = MaterialTheme.colorScheme.outlineVariant
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
                     Text(
                         "  o continúa con  ",
-                        style  = MaterialTheme.typography.bodySmall,
-                        color  = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                     HorizontalDivider(
                         modifier = Modifier.weight(1f),
-                        color    = MaterialTheme.colorScheme.outlineVariant
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedButton(
-                    onClick  = onGoogleSignIn,
+                    onClick = onGoogleSignIn,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
-                    shape    = RoundedCornerShape(16.dp),
-                    border   = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    enabled  = uiState !is UiState.Loading
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    enabled = uiState !is UiState.Loading
                 ) {
                     Icon(
-                        painter            = painterResource(id = R.drawable.ic_google),
+                        painter = painterResource(id = R.drawable.ic_google),
                         contentDescription = "Google",
-                        tint               = Color.Unspecified,
-                        modifier           = Modifier.size(20.dp)
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         "Continuar con Google",
                         fontWeight = FontWeight.Medium,
-                        fontSize   = 15.sp
+                        fontSize = 15.sp
                     )
                 }
 
@@ -190,14 +203,14 @@ fun RegisterScreen(
                 TextButton(onClick = onGoToLogin) {
                     Text(
                         "¿Ya tienes cuenta? ",
-                        color  = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                     Text(
                         "Inicia sesión",
-                        color      = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize   = 14.sp
+                        fontSize = 14.sp
                     )
                 }
 

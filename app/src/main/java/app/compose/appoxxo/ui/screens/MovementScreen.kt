@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -163,7 +164,7 @@ fun MovementsScreen(
                         painter            = painterResource(id = R.drawable.ic_inventory),
                         contentDescription = null,
                         modifier           = Modifier.size(18.dp),
-                        tint               = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint               = Color(0xFFD32F2F).copy(alpha = 0.1f)
                     )
                 },
                 trailingIcon = if (searchQuery.isNotEmpty()) {
@@ -207,7 +208,15 @@ fun MovementsScreen(
                                 contentDescription = null,
                                 modifier           = Modifier.size(14.dp)
                             )
-                        }
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor   = Color(0xFF2E7D32).copy(alpha = 0.1f),
+                            selectedLabelColor       = Color(0xFF2E7D32),
+                            selectedLeadingIconColor = Color(0xFF2E7D32),
+                            containerColor           = MaterialTheme.colorScheme.surface,
+                            labelColor               = MaterialTheme.colorScheme.onSurfaceVariant,
+                            iconColor                = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                     FilterChip(
                         selected = selectedFilter == MovementType.SALIDA,
@@ -219,7 +228,16 @@ fun MovementsScreen(
                                 contentDescription = null,
                                 modifier           = Modifier.size(14.dp)
                             )
-                        }
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor   = Color(0xFFD32F2F).copy(alpha = 0.1f),
+                            selectedLabelColor       = Color(0xFFD32F2F),
+                            selectedLeadingIconColor = Color(0xFFD32F2F),
+                            containerColor           = MaterialTheme.colorScheme.surface,
+                            labelColor               = MaterialTheme.colorScheme.onSurfaceVariant,
+                            iconColor                = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
                     )
                 }
 

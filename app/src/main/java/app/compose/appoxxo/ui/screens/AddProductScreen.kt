@@ -16,9 +16,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.Product
+import app.compose.appoxxo.data.model.ProductCategory
 import app.compose.appoxxo.data.util.UiState
 import app.compose.appoxxo.ui.components.*
 import app.compose.appoxxo.viewmodel.ProductViewModel
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+
 
 // ─── AddProductScreen ──────────────────────────────────────────────────────────
 
@@ -33,6 +36,8 @@ fun AddProductScreen(
     var price    by remember { mutableStateOf("") }
     var stock    by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var category         by remember { mutableStateOf(ProductCategory.OTROS) }
+    var categoryExpanded by remember { mutableStateOf(false) }
 
     val uiState           by viewModel.uiState.collectAsState()
     val snackbarHostState  = remember { SnackbarHostState() }
@@ -67,25 +72,8 @@ fun AddProductScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Agregar producto", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-                navigationIcon = {
-                    IconButton(onClick = onProductSaved) {
-                        Icon(painterResource(id = R.drawable.ic_arrow_back), "Volver")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
         Column(
             modifier = Modifier
-                .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
@@ -114,15 +102,58 @@ fun AddProductScreen(
             AppTextField(
                 value         = name,
                 onValueChange = { name = it },
-                label         = "Nombre del producto"
+                label         = "Nombre del producto",
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_product),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             )
+
+            ExposedDropdownMenuBox(
+                expanded         = categoryExpanded,
+                onExpandedChange = { categoryExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value         = category.label,
+                    onValueChange = {},
+                    readOnly      = true,
+                    label         = { Text("Categoría") },
+                    trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+                    colors        = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                )
+                ExposedDropdownMenu(
+                    expanded         = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false }
+                ) {
+                    ProductCategory.entries.forEach { cat ->
+                        DropdownMenuItem(
+                            text    = { Text(cat.label) },
+                            onClick = { category = cat; categoryExpanded = false }
+                        )
+                    }
+                }
+            }
+
 
             AppTextField(
                 value         = code,
                 onValueChange = { if (it.length <= 10) code = it.uppercase() },
                 label         = "Código",
                 isError       = code.isNotEmpty() && code.length < 5,
-                errorMessage  = "El código debe tener entre 5 y 10 caracteres"
+                errorMessage  = "El código debe tener entre 5 y 10 caracteres",
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_code),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             )
 
             AppTextField(
@@ -131,7 +162,15 @@ fun AddProductScreen(
                 label           = "Precio",
                 isError         = price.isNotEmpty() && parsePrice(price) < 0,
                 errorMessage    = "Ingresa un precio válido",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_attach_money),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             )
 
             AppTextField(
@@ -140,7 +179,15 @@ fun AddProductScreen(
                 label           = "Stock inicial",
                 isError         = stock.isNotEmpty() && stock.toIntOrNull() == null,
                 errorMessage    = "Ingresa un número entero",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_inventory),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             )
 
             val isFormValid = name.isNotBlank()
@@ -156,7 +203,9 @@ fun AddProductScreen(
                             name   = name.trim(),
                             codigo = code.trim(),
                             price  = parsePrice(price),
-                            stock  = stock.toInt()
+                            stock  = stock.toInt(),
+                            category = category
+
                         ),
                         imageUri = imageUri
                     )
@@ -170,4 +219,4 @@ fun AddProductScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-}
+

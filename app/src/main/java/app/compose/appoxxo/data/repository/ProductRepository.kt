@@ -17,7 +17,6 @@ class ProductRepository {
     private val movementRef = db.collection("movements")
 
     // ─── Productos activos ────────────────────────────────────────
-
     suspend fun getProducts(): List<Product> = withContext(Dispatchers.IO) {
         productRef
             .whereEqualTo("isDeleted", false)
@@ -36,11 +35,13 @@ class ProductRepository {
     }
 
     suspend fun getProductById(id: String): Product? = withContext(Dispatchers.IO) {
-        productRef.document(id).get().await().toObject(Product::class.java)
+        productRef.document(id)
+            .get()
+            .await()
+            .toObject(Product::class.java) // devuelve Product? de forma segura
     }
 
     // ─── Validación de campos únicos ──────────────────────────────
-
     suspend fun validateUniqueFields(
         name: String,
         codigo: String,
@@ -59,7 +60,7 @@ class ProductRepository {
 
         if (codigo.isNotBlank()) {
             val codigoTaken = productRef
-                .whereEqualTo("codigo", codigo.trim())
+                .whereEqualTo("código", codigo.trim())
                 .whereEqualTo("isDeleted", false)
                 .get()
                 .await()
@@ -73,7 +74,6 @@ class ProductRepository {
     }
 
     // ─── Agregar producto ─────────────────────────────────────────
-
     suspend fun addProductAndGetId(
         product: Product,
         createdByName: String,
@@ -86,11 +86,11 @@ class ProductRepository {
         val doc = productRef.document()
         productRef.document(doc.id).set(
             product.copy(
-                id            = doc.id,
+                id = doc.id,
                 createdByName = createdByName,
-                createdBy     = createdById,
-                createdAt     = Timestamp.now(),
-                isDeleted     = false
+                createdBy = createdById,
+                createdAt = Timestamp.now(),
+                isDeleted = false
             )
         ).await()
 
@@ -98,7 +98,6 @@ class ProductRepository {
     }
 
     // ─── Actualizar producto ──────────────────────────────────────
-
     suspend fun updateProduct(
         product: Product,
         updatedByName: String = "",
@@ -108,13 +107,13 @@ class ProductRepository {
         val error = validateUniqueFields(product.name, product.codigo, product.id)
         if (error != null) throw Exception(error)
 
-        val previousImageUrl = getProductById(product.id)?.imageUrl ?: ""
+        val previousImageUrl: String = getProductById(product.id)?.imageUrl ?: ""
 
         productRef.document(product.id).set(
             product.copy(
                 updatedByName = updatedByName,
-                updatedById   = updatedById,
-                updatedAt     = Timestamp.now()
+                updatedById = updatedById,
+                updatedAt = Timestamp.now()
             )
         ).await()
 
@@ -122,39 +121,36 @@ class ProductRepository {
     }
 
     // ─── Soft delete producto ─────────────────────────────────────
-
     suspend fun deleteProduct(
         productId: String,
         deletedByName: String,
         deletedById: String
-    ) = withContext(Dispatchers.IO) {
+    ): Unit = withContext(Dispatchers.IO) {
 
         productRef.document(productId).update(
             mapOf(
-                "isDeleted"   to true,
-                "deletedBy"   to deletedByName,
+                "isDeleted" to true,
+                "deletedBy" to deletedByName,
                 "deletedById" to deletedById,
-                "deletedAt"   to Timestamp.now()
+                "deletedAt" to Timestamp.now()
             )
         ).await()
     }
 
     // ─── Restaurar producto ───────────────────────────────────────
-
-    suspend fun restoreProduct(productId: String) = withContext(Dispatchers.IO) {
+    suspend fun restoreProduct(productId: String): Unit = withContext(Dispatchers.IO) {
         productRef.document(productId).update(
             mapOf(
-                "isDeleted"   to false,
-                "deletedBy"   to "",
+                "isDeleted" to false,
+                "deletedBy" to "",
                 "deletedById" to "",
-                "deletedAt"   to null
+                "deletedAt" to null
             )
         ).await()
     }
 
     // ─── Actualiza solo la imagen ─────────────────────────────────
-
-    suspend fun updateImageUrl(productId: String, imageUrl: String) =
+    suspend fun updateImageUrl(productId: String, imageUrl: String): Unit =
         withContext(Dispatchers.IO) {
             productRef.document(productId)
                 .update("imageUrl", imageUrl)
@@ -162,7 +158,6 @@ class ProductRepository {
         }
 
     // ─── Movimientos activos de un producto ───────────────────────
-
     suspend fun getMovementsForProduct(productId: String): List<Movement> =
         withContext(Dispatchers.IO) {
             movementRef
@@ -175,7 +170,6 @@ class ProductRepository {
         }
 
     // ─── Movimientos eliminados de un producto ────────────────────
-
     suspend fun getDeletedMovementsForProduct(productId: String): List<Movement> =
         withContext(Dispatchers.IO) {
             movementRef
@@ -188,7 +182,6 @@ class ProductRepository {
         }
 
     // ─── Todos los movimientos activos ────────────────────────────
-
     suspend fun getAllMovements(): List<Movement> =
         withContext(Dispatchers.IO) {
             movementRef
@@ -200,7 +193,6 @@ class ProductRepository {
         }
 
     // ─── Todos los movimientos eliminados ─────────────────────────
-
     suspend fun getDeletedMovements(): List<Movement> =
         withContext(Dispatchers.IO) {
             movementRef
@@ -212,9 +204,6 @@ class ProductRepository {
         }
 
     // ─── Guarda movimiento sin recalcular stock ───────────────────
-    // Usado al crear un producto con stock inicial para evitar
-    // que registerMovement valide stock contra el producto recién creado
-
     suspend fun saveMovementOnly(movement: Movement): String =
         withContext(Dispatchers.IO) {
             val doc = movementRef.document()
@@ -225,8 +214,7 @@ class ProductRepository {
         }
 
     // ─── Registrar movimiento ─────────────────────────────────────
-
-    suspend fun registerMovement(movement: Movement) =
+    suspend fun registerMovement(movement: Movement): Unit =
         withContext(Dispatchers.IO) {
 
             val product = getProductById(movement.productId)
@@ -247,23 +235,22 @@ class ProductRepository {
         }
 
     // ─── Soft delete movimiento ───────────────────────────────────
-
     suspend fun deleteMovement(
         movementId: String,
         deletedByName: String,
         deletedById: String
     ): String = withContext(Dispatchers.IO) {
 
-        val snap     = movementRef.document(movementId).get().await()
-        val movement = snap.toObject(Movement::class.java)
+        val snap = movementRef.document(movementId).get().await()
+        val movement: Movement = snap.toObject(Movement::class.java)
             ?: throw Exception("Movimiento no encontrado")
 
         movementRef.document(movementId).update(
             mapOf(
-                "isDeleted"   to true,
-                "deletedBy"   to deletedByName,
+                "isDeleted" to true,
+                "deletedBy" to deletedByName,
                 "deletedById" to deletedById,
-                "deletedAt"   to Timestamp.now()
+                "deletedAt" to Timestamp.now()
             )
         ).await()
 
@@ -273,9 +260,7 @@ class ProductRepository {
     }
 
     // ─── Recálculo de stock ───────────────────────────────────────
-    // Stock = Σ entradas activas − Σ salidas activas
-
-    suspend fun recalculateStock(productId: String) =
+    suspend fun recalculateStock(productId: String): Unit =
         withContext(Dispatchers.IO) {
 
             val active = movementRef

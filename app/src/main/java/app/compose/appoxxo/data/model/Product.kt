@@ -12,10 +12,13 @@ data class Product(
     val id: String = "",
     val name: String = "",
     val codigo: String = "",
+
     //Datos comerciales
     val price: Double = 0.0,
     val stock: Int = 0,
     val imageUrl: String = "",
+    val category: ProductCategory = ProductCategory.OTROS,
+
 
     //  Creación
     val createdBy: String = "",
@@ -36,3 +39,22 @@ data class Product(
     @set:PropertyName("isDeleted")
     var isDeleted: Boolean = false          // flag de eliminado
 )
+
+
+enum class ProductCategory(val label: String) {
+    BEBIDAS("Bebidas"),
+    LACTEOS("Lácteos"),
+    PANADERIA("Panadería y Repostería"),
+    CARNES("Carnes y Embutidos"),
+    FRUTAS_VERDURAS("Frutas y Verduras"),
+    ABARROTES("Abarrotes y Despensa"),
+    SNACKS("Snacks y Golosinas"),
+    LIMPIEZA("Limpieza del Hogar"),
+    HIGIENE("Higiene Personal"),
+    CONGELADOS("Congelados"),
+    LICORES("Licores"),
+    CIGARRILLOS("Cigarrillos y Tabaco"),
+    MASCOTAS("Mascotas"),
+    BAZAR("Bazar y Varios"),
+    OTROS("Otros")
+}

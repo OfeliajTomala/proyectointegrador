@@ -81,9 +81,9 @@ fun ProfileScreen(
     }
 
     val roleColor = when (currentUser?.role) {
-        UserRole.ADMIN     -> MaterialTheme.colorScheme.error
-        UserRole.ENCARGADO -> MaterialTheme.colorScheme.tertiary
-        else               -> MaterialTheme.colorScheme.primary
+        UserRole.ADMIN     -> Color(0xFFFF0000)
+        UserRole.ENCARGADO -> Color(0xFFFFC107)
+        else               -> Color(0xFF0E675F)
     }
 
     Column(
@@ -313,7 +313,7 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Paleta de colores",
+                            "Tema",
                             fontWeight = FontWeight.Medium,
                             fontSize   = 15.sp
                         )
@@ -394,7 +394,7 @@ fun ProfileScreen(
                         modifier = Modifier
                             .size(38.dp)
                             .background(
-                                roleColor.copy(alpha = 0.08f),
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
                                 RoundedCornerShape(11.dp)
                             ),
                         contentAlignment = Alignment.Center
@@ -402,7 +402,7 @@ fun ProfileScreen(
                         Icon(
                             painter            = painterResource(id = R.drawable.ic_person),
                             contentDescription = null,
-                            tint               = roleColor,
+                            tint = MaterialTheme.colorScheme.error,
                             modifier           = Modifier.size(20.dp)
                         )
                     }
