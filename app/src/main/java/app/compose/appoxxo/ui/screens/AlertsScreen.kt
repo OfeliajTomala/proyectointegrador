@@ -10,12 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.compose.appoxxo.R
-import app.compose.appoxxo.ui.components.AppEmptyState
 import app.compose.appoxxo.viewmodel.ProductViewModel
 
 @Composable
@@ -28,52 +28,60 @@ fun AlertsScreen(viewModel: ProductViewModel) {
     LazyColumn(
         modifier            = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(Color(0xFFF5F5F5)),
         contentPadding      = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
 
-        // Resumen en dos cards
+        // ─── Resumen en dos cards ─────────────────────────────────
         item {
             Row(
                 modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Sin stock
                 Card(
                     modifier = Modifier.weight(1f),
-                    shape    = RoundedCornerShape(16.dp),
+                    shape    = RoundedCornerShape(14.dp),
                     colors   = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.07f)
+                        containerColor = Color.White
                     ),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-                    )
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(
-                        modifier            = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier            = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            painter            = painterResource(id = R.drawable.ic_warning),
-                            contentDescription = null,
-                            tint               = MaterialTheme.colorScheme.error,
-                            modifier           = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFD32F2F).copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter            = painterResource(id = R.drawable.ic_warning),
+                                contentDescription = null,
+                                tint               = Color(0xFFD32F2F),
+                                modifier           = Modifier.size(22.dp)
+                            )
+                        }
                         Text(
                             outOfStock.size.toString(),
-                            style      = MaterialTheme.typography.headlineMedium,
+                            style      = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.ExtraBold,
-                            color      = MaterialTheme.colorScheme.error,
-                            fontSize   = 30.sp
+                            color      = Color(0xFFD32F2F),
+                            fontSize   = 24.sp
                         )
                         Text(
                             "Sin stock",
-                            style  = MaterialTheme.typography.labelMedium,
-                            color  = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                            fontWeight = FontWeight.Medium
+                            style  = MaterialTheme.typography.labelSmall,
+                            color  = Color(0xFF6B6B72),
+                            fontWeight = FontWeight.Medium,
+                            fontSize   = 12.sp
                         )
                     }
                 }
@@ -81,80 +89,106 @@ fun AlertsScreen(viewModel: ProductViewModel) {
                 // Stock bajo
                 Card(
                     modifier = Modifier.weight(1f),
-                    shape    = RoundedCornerShape(16.dp),
+                    shape    = RoundedCornerShape(14.dp),
                     colors   = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.07f)
+                        containerColor = Color.White
                     ),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
-                    )
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(
-                        modifier            = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier            = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            painter            = painterResource(id = R.drawable.ic_notifications),
-                            contentDescription = null,
-                            tint               = MaterialTheme.colorScheme.tertiary,
-                            modifier           = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFFF5722).copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter            = painterResource(id = R.drawable.ic_notifications),
+                                contentDescription = null,
+                                tint               = Color(0xFFFF5722),
+                                modifier           = Modifier.size(22.dp)
+                            )
+                        }
                         Text(
                             warningStock.size.toString(),
-                            style      = MaterialTheme.typography.headlineMedium,
+                            style      = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.ExtraBold,
-                            color      = MaterialTheme.colorScheme.tertiary,
-                            fontSize   = 30.sp
+                            color      = Color(0xFFFF5722),
+                            fontSize   = 24.sp
                         )
                         Text(
                             "Stock bajo",
-                            style  = MaterialTheme.typography.labelMedium,
-                            color  = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f),
-                            fontWeight = FontWeight.Medium
+                            style  = MaterialTheme.typography.labelSmall,
+                            color  = Color(0xFF6B6B72),
+                            fontWeight = FontWeight.Medium,
+                            fontSize   = 12.sp
                         )
                     }
                 }
             }
         }
 
-        // Lista de productos
+        // ─── Lista de productos ────────────────────────────────────
         if (lowStockProducts.isEmpty()) {
             item {
-                AppEmptyState(
-                    iconRes  = R.drawable.ic_check_circle,
-                    title    = "¡Todo en orden!",
-                    subtitle = "Ningún producto tiene stock bajo."
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape    = RoundedCornerShape(14.dp),
+                    colors   = CardDefaults.cardColors(
+                        containerColor = Color(0xFF43A047).copy(alpha = 0.1f)
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Icon(
+                            painter            = painterResource(R.drawable.ic_check_circle),
+                            contentDescription = null,
+                            tint               = Color(0xFF43A047),
+                            modifier           = Modifier.size(22.dp)
+                        )
+                        Text(
+                            "¡Todo en orden! Todos los productos tienen stock.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF43A047),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         } else {
             item {
                 Text(
-                    "Requieren atención",
+                    "⚠️ Requieren atención",
                     style      = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color      = Color(0xFF1A1A1A),
                     fontSize   = 16.sp
                 )
             }
 
             items(lowStockProducts.sortedBy { it.stock }) { product ->
                 val isOutOfStock = product.stock == 0
-                val accentColor  = if (isOutOfStock)
-                    MaterialTheme.colorScheme.error
-                else
-                    MaterialTheme.colorScheme.tertiary
+                val bgColor      = if (isOutOfStock) Color(0xFFD32F2F) else Color(0xFFFF5722)
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape    = RoundedCornerShape(16.dp),
+                    shape    = RoundedCornerShape(14.dp),
                     colors   = CardDefaults.cardColors(
-                        containerColor = accentColor.copy(alpha = 0.05f)
+                        containerColor = Color.White
                     ),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        accentColor.copy(alpha = 0.15f)
-                    )
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(
                         modifier          = Modifier
@@ -164,15 +198,15 @@ fun AlertsScreen(viewModel: ProductViewModel) {
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(42.dp)
+                                .size(44.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(accentColor.copy(alpha = 0.1f)),
+                                .background(bgColor.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 painter            = painterResource(id = R.drawable.ic_warning),
                                 contentDescription = null,
-                                tint               = accentColor,
+                                tint               = bgColor,
                                 modifier           = Modifier.size(20.dp)
                             )
                         }
@@ -182,41 +216,34 @@ fun AlertsScreen(viewModel: ProductViewModel) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 product.name,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize   = 15.sp
+                                fontWeight = FontWeight.Bold,
+                                fontSize   = 14.sp
                             )
-                            if (product.codigo.isNotEmpty()) {
-                                Text(
-                                    product.codigo,
-                                    style  = MaterialTheme.typography.bodySmall,
-                                    color  = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 12.sp
-                                )
-                            }
                             Text(
                                 "$${"%.2f".format(product.price)}",
-                                style  = MaterialTheme.typography.bodySmall,
-                                color  = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium,
+                                style  = MaterialTheme.typography.labelSmall,
+                                color  = Color(0xFF6B6B72),
                                 fontSize = 12.sp
                             )
                         }
 
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = accentColor
+                            color = bgColor
                         ) {
                             Text(
-                                if (isOutOfStock) "Sin stock" else "${product.stock} uds",
+                                if (isOutOfStock) "Agotado" else "${product.stock} uds",
                                 modifier   = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                color      = MaterialTheme.colorScheme.surface,
+                                color      = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                fontSize   = 12.sp
+                                fontSize   = 11.sp
                             )
                         }
                     }
                 }
             }
         }
+
+        item { Spacer(modifier = Modifier.height(20.dp)) }
     }
 }
