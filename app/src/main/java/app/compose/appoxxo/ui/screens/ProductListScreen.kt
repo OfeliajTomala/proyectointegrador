@@ -24,6 +24,7 @@ import app.compose.appoxxo.viewmodel.ProductViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductListScreen(
     viewModel: ProductViewModel,
@@ -32,17 +33,25 @@ fun ProductListScreen(
     onEditProduct: (String) -> Unit,
     onViewMovements: (String) -> Unit
 ) {
-    val products        by viewModel.products.collectAsState()
-    val deletedProducts by viewModel.deletedProducts.collectAsState()
-    val uiState         by viewModel.uiState.collectAsState()
-    val currentUser     by authViewModel.currentUser.collectAsState()
+    val products         by viewModel.products.collectAsState()
+    val filteredProducts by viewModel.filteredProducts.collectAsState()
+    val deletedProducts  by viewModel.deletedProducts.collectAsState()
+    val uiState          by viewModel.uiState.collectAsState()
+    val currentUser      by authViewModel.currentUser.collectAsState()
+    val searchQuery      by viewModel.searchQuery.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
 
-    var showDeleted      by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val productToDelete   = remember { mutableStateOf<Product?>(null) }
-    val productToRestore  = remember { mutableStateOf<Product?>(null) }
+    var showDeleted          by remember { mutableStateOf(false) }
+    var showCategoryDropdown by remember { mutableStateOf(false) }
+    val snackbarHostState  = remember { SnackbarHostState() }
+    val productToDelete    = remember { mutableStateOf<Product?>(null) }
+    val productToRestore   = remember { mutableStateOf<Product?>(null) }
 
     val canEdit = currentUser?.role == UserRole.ADMIN || currentUser?.role == UserRole.ENCARGADO
+
+    val availableCategories = remember(products) {
+        products.map { it.category }.distinct().sortedBy { it.label }
+    }
 
     LaunchedEffect(showDeleted) {
         if (showDeleted) viewModel.loadDeletedProducts()
@@ -129,6 +138,149 @@ fun ProductListScreen(
                 }
             }
 
+            // ── Search & Filter bar (solo pestaña activos) ────────
+            if (!showDeleted) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value         = searchQuery,
+                        onValueChange = { viewModel.setSearchQuery(it) },
+                        modifier      = Modifier.fillMaxWidth(),
+                        placeholder   = { Text("Buscar por nombre o código…", fontSize = 14.sp) },
+                        leadingIcon   = {
+                            Icon(
+                                painter            = painterResource(id = R.drawable.ic_search),
+                                contentDescription = "Buscar",
+                                modifier           = Modifier.size(20.dp),
+                                tint               = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        trailingIcon  = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                    Icon(
+                                        painter            = painterResource(id = R.drawable.ic_close),
+                                        contentDescription = "Limpiar búsqueda",
+                                        modifier           = Modifier.size(18.dp),
+                                        tint               = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        },
+                        singleLine    = true,
+                        shape         = RoundedCornerShape(12.dp),
+                        colors        = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                        ),
+                        textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+                    )
+
+                    if (availableCategories.isNotEmpty()) {
+                        ExposedDropdownMenuBox(
+                            expanded         = showCategoryDropdown,
+                            onExpandedChange = { showCategoryDropdown = it },
+                            modifier         = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value         = selectedCategory?.label ?: "Todas las categorías",
+                                onValueChange = {},
+                                readOnly      = true,
+                                modifier      = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
+                                leadingIcon   = {
+                                    Icon(
+                                        painter            = painterResource(id = R.drawable.ic_category),
+                                        contentDescription = "Categoría",
+                                        modifier           = Modifier.size(20.dp),
+                                        tint               = if (selectedCategory != null)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailingIcon  = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (selectedCategory != null) {
+                                            IconButton(
+                                                onClick  = { viewModel.setSelectedCategory(null) },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    painter            = painterResource(id = R.drawable.ic_close),
+                                                    contentDescription = "Limpiar filtro",
+                                                    modifier           = Modifier.size(16.dp),
+                                                    tint               = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCategoryDropdown)
+                                    }
+                                },
+                                singleLine    = true,
+                                shape         = RoundedCornerShape(12.dp),
+                                colors        = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = if (selectedCategory != null)
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                                    else
+                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                                ),
+                                textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+                            )
+
+                            ExposedDropdownMenu(
+                                expanded         = showCategoryDropdown,
+                                onDismissRequest = { showCategoryDropdown = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text    = {
+                                        Text(
+                                            "Todas las categorías",
+                                            fontSize   = 14.sp,
+                                            fontWeight = if (selectedCategory == null) FontWeight.SemiBold else FontWeight.Normal,
+                                            color      = if (selectedCategory == null)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurface
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.setSelectedCategory(null)
+                                        showCategoryDropdown = false
+                                    }
+                                )
+                                HorizontalDivider()
+                                availableCategories.forEach { category ->
+                                    DropdownMenuItem(
+                                        text    = {
+                                            Text(
+                                                category.label,
+                                                fontSize   = 14.sp,
+                                                fontWeight = if (selectedCategory == category) FontWeight.SemiBold else FontWeight.Normal,
+                                                color      = if (selectedCategory == category)
+                                                    MaterialTheme.colorScheme.primary
+                                                else
+                                                    MaterialTheme.colorScheme.onSurface
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.setSelectedCategory(category)
+                                            showCategoryDropdown = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // ── Productos activos ─────────────────────────────────
             if (!showDeleted) {
                 when {
@@ -138,19 +290,22 @@ fun ProductListScreen(
                             contentAlignment = Alignment.Center
                         ) { CircularProgressIndicator() }
                     }
-                    products.isEmpty() -> {
+                    filteredProducts.isEmpty() -> {
                         AppEmptyState(
                             iconRes  = R.drawable.ic_inventory,
-                            title    = "Sin productos aún",
-                            subtitle = if (canEdit) "Agrega uno con el botón +"
-                            else "No hay productos registrados",
+                            title    = if (products.isEmpty()) "Sin productos aún" else "Sin resultados",
+                            subtitle = when {
+                                products.isEmpty() && canEdit -> "Agrega uno con el botón +"
+                                products.isEmpty()            -> "No hay productos registrados"
+                                else                          -> "Intenta con otro término o categoría"
+                            },
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                     else -> {
                         LazyColumn(
                             contentPadding      = PaddingValues(
-                                top    = 10.dp,
+                                top    = 4.dp,
                                 bottom = 88.dp,
                                 start  = 16.dp,
                                 end    = 16.dp
@@ -158,15 +313,19 @@ fun ProductListScreen(
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             item {
+                                val hasFilters = selectedCategory != null || searchQuery.isNotBlank()
                                 Text(
-                                    "${products.size} producto${if (products.size != 1) "s" else ""}",
+                                    text = if (hasFilters)
+                                        "${filteredProducts.size} de ${products.size} producto${if (products.size != 1) "s" else ""}"
+                                    else
+                                        "${products.size} producto${if (products.size != 1) "s" else ""}",
                                     style    = MaterialTheme.typography.labelLarge,
                                     color    = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(vertical = 2.dp),
                                     fontSize = 12.sp
                                 )
                             }
-                            items(products, key = { it.id }) { product ->
+                            items(filteredProducts, key = { it.id }) { product ->
                                 ProductCard(
                                     product         = product,
                                     role            = currentUser?.role,
@@ -264,32 +423,32 @@ private fun DeletedProductCard(
                 )
                 if (product.codigo.isNotBlank()) {
                     Text(
-                        text  = "Código: ${product.codigo}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text     = "Código: ${product.codigo}",
+                        style    = MaterialTheme.typography.bodySmall,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
                 Text(
-                    text  = "Stock: ${product.stock}  •  $${"%.2f".format(product.price)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text     = "Stock: ${product.stock}  •  $${"%.2f".format(product.price)}",
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
                 if (product.deletedAt != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text  = "Eliminado: ${dateFormatter.format(product.deletedAt.toDate())}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.75f),
+                        text     = "Eliminado: ${dateFormatter.format(product.deletedAt.toDate())}",
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.error.copy(alpha = 0.75f),
                         fontSize = 11.sp
                     )
                 }
                 if (product.deletedBy.isNotBlank()) {
                     Text(
-                        text  = "Por: ${product.deletedBy}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text     = "Por: ${product.deletedBy}",
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
                 }
