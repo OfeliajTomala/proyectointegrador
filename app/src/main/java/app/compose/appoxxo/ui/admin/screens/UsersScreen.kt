@@ -15,6 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
 import app.compose.appoxxo.R
 import app.compose.appoxxo.data.model.User
 import app.compose.appoxxo.data.model.UserRole
@@ -110,9 +111,9 @@ private fun UserCard(
     onDelete: () -> Unit
 ) {
     val roleColor = when (user.role) {
-        UserRole.ADMIN     -> MaterialTheme.colorScheme.error
-        UserRole.ENCARGADO -> MaterialTheme.colorScheme.tertiary
-        UserRole.CAJERO    -> MaterialTheme.colorScheme.primary
+        UserRole.ADMIN     -> Color(0xFFFF0000)
+        UserRole.ENCARGADO -> Color(0xFFFFC107)
+        UserRole.CAJERO    -> Color(0xFF0E675F)
     }
 
     Card(
@@ -204,16 +205,18 @@ private fun UserCard(
                 )
 
                 UserRole.entries.forEach { role ->
+                    val isSelected = user.role == role
+
                     FilterChip(
-                        selected = user.role == role,
-                        onClick  = { if (user.role != role) onRoleChange(role) },
-                        label    = {
-                            Text(
-                                role.name,
-                                style    = MaterialTheme.typography.labelSmall,
-                                fontSize = 11.sp
-                            )
-                        },
+                        selected = isSelected,
+                        onClick  = { if (!isSelected) onRoleChange(role) },
+                        label    = { Text(role.name, fontSize = 11.sp) },
+                        colors   = FilterChipDefaults.filterChipColors(
+                            containerColor              = MaterialTheme.colorScheme.surfaceVariant,
+                            selectedContainerColor      = roleColor.copy(alpha = 0.1f),
+                            labelColor                  = MaterialTheme.colorScheme.onSurfaceVariant,
+                            selectedLabelColor          = roleColor
+                        ),
                         modifier = Modifier.padding(end = 5.dp),
                         enabled  = !isLoading
                     )
