@@ -1,5 +1,6 @@
 package app.compose.appoxxo.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,24 +26,27 @@ import app.compose.appoxxo.viewmodel.ProductViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MovementsScreen(
     viewModel: ProductViewModel,
-    canDelete: Boolean = false
+    canDelete: Boolean = false,
+    onAddMovement: (() -> Unit)? = null
 ) {
-    val allMovements     by viewModel.allMovements.collectAsState()
+    val allMovements by viewModel.allMovements.collectAsState()
     val deletedMovements by viewModel.deletedMovements.collectAsState()
-    val dateFrom         by viewModel.dateFrom.collectAsState()
-    val dateTo           by viewModel.dateTo.collectAsState()
-    val uiState          by viewModel.uiState.collectAsState()
+    val dateFrom by viewModel.dateFrom.collectAsState()
+    val dateTo by viewModel.dateTo.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
-    var selectedFilter    by remember { mutableStateOf<MovementType?>(null) }
-    var searchQuery       by remember { mutableStateOf("") }
-    var showDeleted       by remember { mutableStateOf(false) }
+    var selectedFilter by remember { mutableStateOf<MovementType?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showDeleted by remember { mutableStateOf(false) }
     val showDateFromPicker = remember { mutableStateOf(false) }
-    val showDateToPicker   = remember { mutableStateOf(false) }
-    val movementToDelete   = remember { mutableStateOf<String?>(null) }
+    val showDateToPicker = remember { mutableStateOf(false) }
+    val movementToDelete = remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val dateFormatter = remember {
         SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("es"))
@@ -68,9 +72,13 @@ fun MovementsScreen(
     movementToDelete.value?.let { movementId ->
         AlertDialog(
             onDismissRequest = { movementToDelete.value = null },
-            shape            = RoundedCornerShape(20.dp),
-            title            = {
-                Text("Eliminar movimiento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Text(
+                    "Eliminar movimiento",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
             },
             text = {
                 Text(
@@ -80,8 +88,14 @@ fun MovementsScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.deleteMovement(movementId); movementToDelete.value = null }) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+                TextButton(onClick = {
+                    viewModel.deleteMovement(movementId); movementToDelete.value = null
+                }) {
+                    Text(
+                        "Eliminar",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             },
             dismissButton = {
@@ -100,287 +114,309 @@ fun MovementsScreen(
     } else {
         allMovements.filter { m ->
             (selectedFilter == null || m.type == selectedFilter) &&
-                    (searchQuery.isBlank() || m.productName.contains(searchQuery, ignoreCase = true)) &&
+                    (searchQuery.isBlank() || m.productName.contains(
+                        searchQuery,
+                        ignoreCase = true
+                    )) &&
                     (dateFrom == null || !m.date.toDate().before(dateFrom)) &&
-                    (dateTo   == null || !m.date.toDate().after(endOfDay(dateTo!!)))
+                    (dateTo == null || !m.date.toDate().after(endOfDay(dateTo!!)))
         }
     }
 
     if (showDateFromPicker.value) {
         AppDatePickerDialog(
-            initialDate    = dateFrom,
-            title          = "Desde",
+            initialDate = dateFrom,
+            title = "Desde",
             onDateSelected = { viewModel.setDateFrom(it); showDateFromPicker.value = false },
-            onDismiss      = { showDateFromPicker.value = false }
+            onDismiss = { showDateFromPicker.value = false }
         )
     }
     if (showDateToPicker.value) {
         AppDatePickerDialog(
-            initialDate    = dateTo,
-            title          = "Hasta",
+            initialDate = dateTo,
+            title = "Hasta",
             onDateSelected = { viewModel.setDateTo(it); showDateToPicker.value = false },
-            onDismiss      = { showDateToPicker.value = false }
+            onDismiss = { showDateToPicker.value = false }
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-
-        // ── Tabs Activos / Eliminados ─────────────────────────────
-        PrimaryTabRow(
-            selectedTabIndex = if (showDeleted) 1 else 0,
-            containerColor   = MaterialTheme.colorScheme.surface,
-            contentColor     = MaterialTheme.colorScheme.primary
-        ) {
-            Tab(
-                selected = !showDeleted,
-                onClick  = { showDeleted = false; viewModel.loadAllMovements() },
-                text     = { Text("Activos", fontSize = 14.sp) }
-            )
-            Tab(
-                selected = showDeleted,
-                onClick  = { showDeleted = true; viewModel.loadDeletedMovements() },
-                text     = { Text("Eliminados", fontSize = 14.sp) }
-            )
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            onAddMovement?.let { action ->
+                FloatingActionButton(
+                    onClick = action,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_add),
+                        contentDescription = "Agregar movimiento"
+                    )
+                }
+            }
         }
-
-        // ── Filtros ───────────────────────────────────────────────
+    ) {
         Column(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            // Buscador
-            OutlinedTextField(
-                value         = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder   = { Text("Buscar producto…", fontSize = 14.sp) },
-                leadingIcon   = {
-                    Icon(
-                        painter            = painterResource(id = R.drawable.ic_inventory),
-                        contentDescription = null,
-                        modifier           = Modifier.size(18.dp),
-                        tint               = Color(0xFFD32F2F).copy(alpha = 0.1f)
-                    )
-                },
-                trailingIcon = if (searchQuery.isNotEmpty()) {
-                    {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(
-                                painter            = painterResource(id = R.drawable.ic_delete),
-                                contentDescription = "Limpiar",
-                                modifier           = Modifier.size(17.dp),
-                                tint               = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                } else null,
-                modifier   = Modifier.fillMaxWidth(),
-                shape      = RoundedCornerShape(14.dp),
-                singleLine = true,
-                colors     = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor      = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor    = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor   = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+
+            // ── Tabs Activos / Eliminados ─────────────────────────────
+            PrimaryTabRow(
+                selectedTabIndex = if (showDeleted) 1 else 0,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
+            ) {
+                Tab(
+                    selected = !showDeleted,
+                    onClick = { showDeleted = false; viewModel.loadAllMovements() },
+                    text = { Text("Activos", fontSize = 14.sp) }
                 )
-            )
+                Tab(
+                    selected = showDeleted,
+                    onClick = { showDeleted = true; viewModel.loadDeletedMovements() },
+                    text = { Text("Eliminados", fontSize = 14.sp) }
+                )
+            }
 
-            // Filtros de tipo (solo en pestaña activos)
-            if (!showDeleted) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = selectedFilter == null,
-                        onClick  = { selectedFilter = null },
-                        label    = { Text("Todos", fontSize = 13.sp) }
-                    )
-                    FilterChip(
-                        selected = selectedFilter == MovementType.ENTRADA,
-                        onClick  = { selectedFilter = MovementType.ENTRADA },
-                        label    = { Text("Entradas", fontSize = 13.sp) },
-                        leadingIcon = {
-                            Icon(
-                                painterResource(id = R.drawable.ic_arrow_downward),
-                                contentDescription = null,
-                                modifier           = Modifier.size(14.dp)
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor   = Color(0xFF2E7D32).copy(alpha = 0.1f),
-                            selectedLabelColor       = Color(0xFF2E7D32),
-                            selectedLeadingIconColor = Color(0xFF2E7D32),
-                            containerColor           = MaterialTheme.colorScheme.surface,
-                            labelColor               = MaterialTheme.colorScheme.onSurfaceVariant,
-                            iconColor                = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                    FilterChip(
-                        selected = selectedFilter == MovementType.SALIDA,
-                        onClick  = { selectedFilter = MovementType.SALIDA },
-                        label    = { Text("Salidas", fontSize = 13.sp) },
-                        leadingIcon = {
-                            Icon(
-                                painterResource(id = R.drawable.ic_arrow_upward),
-                                contentDescription = null,
-                                modifier           = Modifier.size(14.dp)
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor   = Color(0xFFD32F2F).copy(alpha = 0.1f),
-                            selectedLabelColor       = Color(0xFFD32F2F),
-                            selectedLeadingIconColor = Color(0xFFD32F2F),
-                            containerColor           = MaterialTheme.colorScheme.surface,
-                            labelColor               = MaterialTheme.colorScheme.onSurfaceVariant,
-                            iconColor                = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                    )
-                }
-
-                // Filtro de fechas
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment     = Alignment.CenterVertically
-                ) {
-                    OutlinedButton(
-                        onClick        = { showDateFromPicker.value = true },
-                        modifier       = Modifier.weight(1f),
-                        shape          = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        border         = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (dateFrom != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                            else MaterialTheme.colorScheme.outlineVariant
-                        )
-                    ) {
+            // ── Filtros ───────────────────────────────────────────────
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Buscador
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Buscar producto…", fontSize = 14.sp) },
+                    leadingIcon = {
                         Icon(
-                            painterResource(id = R.drawable.ic_notifications),
+                            painter = painterResource(id = R.drawable.ic_inventory),
                             contentDescription = null,
-                            modifier           = Modifier.size(14.dp),
-                            tint               = if (dateFrom != null)
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                            modifier = Modifier.size(18.dp),
+                            tint = Color(0xFFD32F2F).copy(alpha = 0.1f)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text  = if (dateFrom != null) dateFormatter.format(dateFrom!!) else "Desde",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (dateFrom != null) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp
+                    },
+                    trailingIcon = if (searchQuery.isNotEmpty()) {
+                        {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_delete),
+                                    contentDescription = "Limpiar",
+                                    modifier = Modifier.size(17.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                            alpha = 0.3f
+                        )
+                    )
+                )
+
+                // Filtros de tipo (solo en pestaña activos)
+                if (!showDeleted) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = selectedFilter == null,
+                            onClick = { selectedFilter = null },
+                            label = { Text("Todos", fontSize = 13.sp) }
+                        )
+                        FilterChip(
+                            selected = selectedFilter == MovementType.ENTRADA,
+                            onClick = { selectedFilter = MovementType.ENTRADA },
+                            label = { Text("Entradas", fontSize = 13.sp) },
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(id = R.drawable.ic_arrow_downward),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFF2E7D32).copy(alpha = 0.1f),
+                                selectedLabelColor = Color(0xFF2E7D32),
+                                selectedLeadingIconColor = Color(0xFF2E7D32),
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                        FilterChip(
+                            selected = selectedFilter == MovementType.SALIDA,
+                            onClick = { selectedFilter = MovementType.SALIDA },
+                            label = { Text("Salidas", fontSize = 13.sp) },
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(id = R.drawable.ic_arrow_upward),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFD32F2F).copy(alpha = 0.1f),
+                                selectedLabelColor = Color(0xFFD32F2F),
+                                selectedLeadingIconColor = Color(0xFFD32F2F),
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
                         )
                     }
 
-                    OutlinedButton(
-                        onClick        = { showDateToPicker.value = true },
-                        modifier       = Modifier.weight(1f),
-                        shape          = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        border         = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (dateTo != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                            else MaterialTheme.colorScheme.outlineVariant
-                        )
+                    // Filtro de fechas
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            painterResource(id = R.drawable.ic_notifications),
-                            contentDescription = null,
-                            modifier           = Modifier.size(14.dp),
-                            tint               = if (dateTo != null)
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text  = if (dateTo != null) dateFormatter.format(dateTo!!) else "Hasta",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (dateTo != null) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp
-                        )
-                    }
-
-                    if (dateFrom != null || dateTo != null) {
-                        IconButton(
-                            onClick  = { viewModel.clearDateFilter() },
-                            modifier = Modifier.size(36.dp)
+                        OutlinedButton(
+                            onClick = { showDateFromPicker.value = true },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (dateFrom != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                else MaterialTheme.colorScheme.outlineVariant
+                            )
                         ) {
                             Icon(
-                                painterResource(id = R.drawable.ic_delete),
-                                contentDescription = "Limpiar fechas",
-                                tint               = MaterialTheme.colorScheme.error,
-                                modifier           = Modifier.size(18.dp)
+                                painterResource(id = R.drawable.ic_notifications),
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = if (dateFrom != null)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (dateFrom != null) dateFormatter.format(dateFrom!!) else "Desde",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (dateFrom != null) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp
                             )
                         }
+
+                        OutlinedButton(
+                            onClick = { showDateToPicker.value = true },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (dateTo != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                else MaterialTheme.colorScheme.outlineVariant
+                            )
+                        ) {
+                            Icon(
+                                painterResource(id = R.drawable.ic_notifications),
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = if (dateTo != null)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (dateTo != null) dateFormatter.format(dateTo!!) else "Hasta",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (dateTo != null) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp
+                            )
+                        }
+
+                        if (dateFrom != null || dateTo != null) {
+                            IconButton(
+                                onClick = { viewModel.clearDateFilter() },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    painterResource(id = R.drawable.ic_delete),
+                                    contentDescription = "Limpiar fechas",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Etiqueta de rango activo
+                    if (dateFrom != null || dateTo != null) {
+                        Text(
+                            text = buildString {
+                                append("Mostrando: ")
+                                if (dateFrom != null) append("desde ${dateFormatter.format(dateFrom!!)} ")
+                                if (dateTo != null) append("hasta ${dateFormatter.format(dateTo!!)}")
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 11.sp
+                        )
                     }
                 }
-
-                // Etiqueta de rango activo
-                if (dateFrom != null || dateTo != null) {
-                    Text(
-                        text = buildString {
-                            append("Mostrando: ")
-                            if (dateFrom != null) append("desde ${dateFormatter.format(dateFrom!!)} ")
-                            if (dateTo   != null) append("hasta ${dateFormatter.format(dateTo!!)}")
-                        },
-                        style    = MaterialTheme.typography.labelSmall,
-                        color    = MaterialTheme.colorScheme.primary,
-                        fontSize = 11.sp
-                    )
-                }
-            }
-        }
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-        // ── Lista ─────────────────────────────────────────────────
-        LazyColumn(
-            contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item {
-                Text(
-                    "${filteredMovements.size} movimiento${if (filteredMovements.size != 1) "s" else ""}",
-                    style    = MaterialTheme.typography.labelLarge,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 4.dp),
-                    fontSize = 12.sp
-                )
             }
 
-            if (filteredMovements.isEmpty()) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+            // ── Lista ─────────────────────────────────────────────────
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 item {
-                    AppEmptyState(
-                        iconRes  = R.drawable.ic_list,
-                        title    = if (showDeleted) "Sin movimientos eliminados"
-                        else "Sin movimientos registrados",
-                        subtitle = if (showDeleted) "No hay movimientos eliminados aún"
-                        else "Los movimientos aparecerán aquí cuando\nregistres entradas o salidas."
+                    Text(
+                        "${filteredMovements.size} movimiento${if (filteredMovements.size != 1) "s" else ""}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        fontSize = 12.sp
                     )
                 }
-            } else {
-                items(filteredMovements, key = { it.id }) { movement ->
-                    if (showDeleted) {
-                        DeletedMovementCard(movement = movement)
-                    } else {
-                        MovementCard(
-                            movement = movement,
-                            onDelete = if (canDelete) {
-                                { movementToDelete.value = movement.id }
-                            } else null
+
+                if (filteredMovements.isEmpty()) {
+                    item {
+                        AppEmptyState(
+                            iconRes = R.drawable.ic_list,
+                            title = if (showDeleted) "Sin movimientos eliminados"
+                            else "Sin movimientos registrados",
+                            subtitle = if (showDeleted) "No hay movimientos eliminados aún"
+                            else "Los movimientos aparecerán aquí cuando\nregistres entradas o salidas."
                         )
+                    }
+                } else {
+                    items(filteredMovements, key = { it.id }) { movement ->
+                        if (showDeleted) {
+                            DeletedMovementCard(movement = movement)
+                        } else {
+                            MovementCard(
+                                movement = movement,
+                                onDelete = if (canDelete) {
+                                    { movementToDelete.value = movement.id }
+                                } else null
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
-
 private fun endOfDay(date: Date): Date {
     val cal = Calendar.getInstance().apply {
         time = date

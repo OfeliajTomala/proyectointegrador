@@ -68,6 +68,7 @@ fun EncargadoNavGraph(
                                 currentRoute == NavItem.AddProduct.route            -> "Agregar Producto"
                                 currentRoute?.startsWith("edit_product") == true    -> "Editar Producto"
                                 currentRoute == NavItem.Movements.route             -> "Movimientos"
+                                currentRoute == NavItem.AddMovement.route -> "Agregar Movimiento"
                                 currentRoute?.startsWith("movement_detail") == true -> "Movimientos"
                                 currentRoute == NavItem.Alerts.route                -> "Alertas"
                                 currentRoute == NavItem.Profile.route               -> "Perfil"
@@ -155,7 +156,18 @@ fun EncargadoNavGraph(
                 }
 
                 composable(NavItem.Movements.route) {
-                    MovementsScreen(viewModel = productViewModel, canDelete = true)
+                    MovementsScreen(
+                        viewModel     = productViewModel,
+                        canDelete     = true,
+                        onAddMovement = { navController.navigate(NavItem.AddMovement.route) }
+                    )
+                }
+
+                composable(NavItem.AddMovement.route) {
+                    AddMovementScreen(
+                        viewModel       = productViewModel,
+                        onMovementSaved = { navController.popBackStack() }
+                    )
                 }
 
                 composable(

@@ -44,6 +44,8 @@ sealed class NavItem(val route: String) {
         fun createRoute(productId: String) = "movement_detail/$productId"
     }
 
+    object AddMovement : NavItem("add_movement")
+
     // ─── Admin ───────────────────────────────────────────────────
     object Users : NavItem("users")
 }
