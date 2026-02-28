@@ -2,17 +2,14 @@ package app.compose.appoxxo.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,32 +31,39 @@ import app.compose.appoxxo.viewmodel.ProductViewModel
 
 // ─── AddMovementScreen ─────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddMovementScreen(
     viewModel: ProductViewModel,
     onMovementSaved: () -> Unit
 ) {
-    val products     by viewModel.products.collectAsState()
-    val uiState      by viewModel.uiState.collectAsState()
-    val snackbarHost  = remember { SnackbarHostState() }
+    val products  by viewModel.products.collectAsState()
+    val uiState   by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // ─── Estado local ──────────────────────────────────────────────
-    var selectedCategory by remember { mutableStateOf<ProductCategory?>(null) }
-    var selectedProduct  by remember { mutableStateOf<Product?>(null) }
-    var movementType     by remember { mutableStateOf(MovementType.ENTRADA) }
-    var quantity         by remember { mutableStateOf("") }
-    var quantityError    by remember { mutableStateOf<String?>(null) }
+    var selectedCategory     by remember { mutableStateOf<ProductCategory?>(null) }
+    var categoryExpanded     by remember { mutableStateOf(false) }
 
-    // ─── Productos filtrados por categoría ─────────────────────────
-    val displayedProducts = remember(products, selectedCategory) {
+    var selectedProduct      by remember { mutableStateOf<Product?>(null) }
+    var productExpanded      by remember { mutableStateOf(false) }
+
+    var movementType         by remember { mutableStateOf(MovementType.ENTRADA) }
+    var quantity             by remember { mutableStateOf("") }
+    var quantityError        by remember { mutableStateOf<String?>(null) }
+
+    // ─── Productos filtrados según categoría elegida ───────────────
+    val filteredProducts = remember(products, selectedCategory) {
         if (selectedCategory == null) products
         else products.filter { it.category == selectedCategory }
     }
 
-    // ─── Limpiar selección si el producto filtrado desaparece ──────
-    LaunchedEffect(displayedProducts) {
-        if (selectedProduct != null && selectedProduct !in displayedProducts) {
+    // Limpiar producto seleccionado si ya no aparece en la lista filtrada
+    LaunchedEffect(filteredProducts) {
+        if (selectedProduct != null && selectedProduct !in filteredProducts) {
             selectedProduct = null
+            quantity        = ""
+            quantityError   = null
         }
     }
 
@@ -71,57 +75,181 @@ fun AddMovementScreen(
                 onMovementSaved()
             }
             is UiState.Error -> {
-                snackbarHost.showSnackbar((uiState as UiState.Error).message)
+                snackbarHostState.showSnackbar((uiState as UiState.Error).message)
                 viewModel.resetState()
             }
             else -> {}
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHost) }) { padding ->
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
                 .padding(padding)
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-            // ── Sección 1: Chips de categoría ──────────────────────
-            CategoryFilterRow(
-                selectedCategory = selectedCategory,
-                onCategorySelected = { cat ->
-                    selectedCategory = if (selectedCategory == cat) null else cat
-                }
+            // ── Sección: Seleccionar producto ──────────────────────
+            Text(
+                text       = "Seleccionar producto",
+                style      = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize   = 12.sp
             )
 
-            HorizontalDivider(
-                color    = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-
-            // ── Sección 2: Grid de productos ───────────────────────
-            Box(modifier = Modifier.weight(1f)) {
-                if (displayedProducts.isEmpty()) {
-                    EmptyProductsMessage(
-                        modifier = Modifier.align(Alignment.Center)
+            // ── Dropdown 1: Categoría ──────────────────────────────
+            ExposedDropdownMenuBox(
+                expanded         = categoryExpanded,
+                onExpandedChange = { categoryExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value         = selectedCategory?.label ?: "Todas las categorías",
+                    onValueChange = {},
+                    readOnly      = true,
+                    label         = { Text("Categoría") },
+                    trailingIcon  = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter            = painterResource(R.drawable.ic_shopping_cart),
+                            contentDescription = null,
+                            tint               = MaterialTheme.colorScheme.primary,
+                            modifier           = Modifier.size(20.dp)
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+                    shape  = RoundedCornerShape(14.dp),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                )
+                ExposedDropdownMenu(
+                    expanded         = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false }
+                ) {
+                    // Opción "Todas"
+                    DropdownMenuItem(
+                        text = { Text("Todas las categorías") },
+                        onClick = {
+                            selectedCategory = null
+                            categoryExpanded = false
+                        },
+                        leadingIcon = {
+                            if (selectedCategory == null) {
+                                Icon(
+                                    painter            = painterResource(R.drawable.ic_check_circle),
+                                    contentDescription = null,
+                                    tint               = MaterialTheme.colorScheme.primary,
+                                    modifier           = Modifier.size(16.dp)
+                                )
+                            }
+                        }
                     )
-                } else {
-                    LazyVerticalGrid(
-                        columns             = GridCells.Fixed(2),
-                        contentPadding      = PaddingValues(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxSize()
+                    HorizontalDivider()
+                    ProductCategory.entries.forEach { category ->
+                        DropdownMenuItem(
+                            text    = { Text(category.label) },
+                            onClick = {
+                                selectedCategory = category
+                                categoryExpanded = false
+                            },
+                            leadingIcon = {
+                                if (selectedCategory == category) {
+                                    Icon(
+                                        painter            = painterResource(R.drawable.ic_check_circle),
+                                        contentDescription = null,
+                                        tint               = MaterialTheme.colorScheme.primary,
+                                        modifier           = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            // ── Dropdown 2: Producto ───────────────────────────────
+            ExposedDropdownMenuBox(
+                expanded         = productExpanded,
+                onExpandedChange = {
+                    if (filteredProducts.isNotEmpty()) productExpanded = it
+                }
+            ) {
+                OutlinedTextField(
+                    value         = selectedProduct?.name
+                        ?: if (filteredProducts.isEmpty()) "Sin productos en esta categoría"
+                        else "Selecciona un producto",
+                    onValueChange = {},
+                    readOnly      = true,
+                    label         = { Text("Producto") },
+                    trailingIcon  = {
+                        if (filteredProducts.isNotEmpty()) {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = productExpanded)
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter            = painterResource(R.drawable.ic_product),
+                            contentDescription = null,
+                            tint               = if (filteredProducts.isEmpty())
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            else MaterialTheme.colorScheme.primary,
+                            modifier           = Modifier.size(20.dp)
+                        )
+                    },
+                    isError  = filteredProducts.isEmpty(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+                    shape  = RoundedCornerShape(14.dp),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                )
+
+                if (filteredProducts.isNotEmpty()) {
+                    ExposedDropdownMenu(
+                        expanded         = productExpanded,
+                        onDismissRequest = { productExpanded = false }
                     ) {
-                        items(displayedProducts, key = { it.id }) { product ->
-                            SelectableProductCard(
-                                product    = product,
-                                isSelected = product.id == selectedProduct?.id,
-                                onClick    = {
-                                    selectedProduct = if (selectedProduct?.id == product.id) null
-                                    else product
-                                    quantity      = ""
-                                    quantityError = null
+                        filteredProducts.forEach { product ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(
+                                            text       = product.name,
+                                            fontWeight = FontWeight.Medium,
+                                            maxLines   = 1,
+                                            overflow   = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text      = stockLabel(product.stock),
+                                            fontSize  = 11.sp,
+                                            color     = stockColor(product.stock)
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    selectedProduct = product
+                                    productExpanded = false
+                                    quantity        = ""
+                                    quantityError   = null
+                                },
+                                leadingIcon = {
+                                    if (selectedProduct?.id == product.id) {
+                                        Icon(
+                                            painter            = painterResource(R.drawable.ic_check_circle),
+                                            contentDescription = null,
+                                            tint               = MaterialTheme.colorScheme.primary,
+                                            modifier           = Modifier.size(16.dp)
+                                        )
+                                    }
                                 }
                             )
                         }
@@ -129,346 +257,223 @@ fun AddMovementScreen(
                 }
             }
 
-            // ── Sección 3: Panel inferior (animado) ────────────────
+            // ── Card resumen del producto seleccionado (animada) ───
             AnimatedVisibility(
                 visible = selectedProduct != null,
-                enter   = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit    = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                enter   = expandVertically() + fadeIn(),
+                exit    = shrinkVertically() + fadeOut()
             ) {
                 selectedProduct?.let { product ->
-                    MovementInputPanel(
-                        product       = product,
-                        movementType  = movementType,
-                        quantity      = quantity,
-                        quantityError = quantityError,
-                        isLoading     = uiState is UiState.Loading,
-                        onTypeChange  = { movementType = it },
-                        onQuantityChange = { value ->
-                            quantity      = value
-                            quantityError = null
-                        },
-                        onRegister = {
-                            val qty = quantity.toIntOrNull()
-                            when {
-                                qty == null || qty <= 0 ->
-                                    quantityError = "Ingresa una cantidad válida"
-                                movementType == MovementType.SALIDA && qty > product.stock ->
-                                    quantityError = "No hay suficiente stock (disponible: ${product.stock})"
-                                else -> viewModel.registerMovement(
-                                    productId = product.id,
-                                    type      = movementType,
-                                    quantity  = qty
+                    ProductSummaryCard(product = product)
+                }
+            }
+
+            // ── Sección de movimiento (animada) ────────────────────
+            AnimatedVisibility(
+                visible = selectedProduct != null,
+                enter   = expandVertically() + fadeIn(),
+                exit    = shrinkVertically() + fadeOut()
+            ) {
+                selectedProduct?.let { product ->
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
+                        HorizontalDivider(
+                            color    = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+
+                        Text(
+                            text       = "Tipo de movimiento",
+                            style      = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize   = 12.sp
+                        )
+
+                        // Selector ENTRADA / SALIDA
+                        Row(
+                            modifier              = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            MovementType.entries.forEach { type ->
+                                val isSelected = movementType == type
+                                val (bgColor, textColor, iconRes) = when (type) {
+                                    MovementType.ENTRADA if isSelected ->
+                                        Triple(Color(0xFF2E7D32), Color.White, R.drawable.ic_arrow_downward)
+
+                                    MovementType.SALIDA if isSelected ->
+                                        Triple(Color(0xFFC62828), Color.White, R.drawable.ic_arrow_upward)
+
+                                    else -> Triple(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                        if (type == MovementType.ENTRADA) R.drawable.ic_arrow_downward
+                                        else R.drawable.ic_arrow_upward
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(bgColor)
+                                        .clickable { movementType = type }
+                                        .padding(vertical = 14.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment     = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter            = painterResource(iconRes),
+                                        contentDescription = null,
+                                        tint               = textColor,
+                                        modifier           = Modifier.size(16.dp)
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text       = type.name.lowercase()
+                                            .replaceFirstChar { it.uppercase() },
+                                        color      = textColor,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize   = 14.sp
+                                    )
+                                }
+                            }
+                        }
+
+                        // Campo de cantidad
+                        Column {
+                            OutlinedTextField(
+                                value         = quantity,
+                                onValueChange = { quantity = it; quantityError = null },
+                                label         = { Text("Cantidad") },
+                                modifier      = Modifier.fillMaxWidth(),
+                                isError       = quantityError != null,
+                                singleLine    = true,
+                                shape         = RoundedCornerShape(14.dp),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                leadingIcon   = {
+                                    Icon(
+                                        painter            = painterResource(R.drawable.ic_inventory),
+                                        contentDescription = null,
+                                        tint               = MaterialTheme.colorScheme.primary,
+                                        modifier           = Modifier.size(20.dp)
+                                    )
+                                },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    errorBorderColor     = MaterialTheme.colorScheme.error,
+                                    focusedLabelColor    = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                            AnimatedVisibility(
+                                visible = quantityError != null,
+                                enter   = expandVertically(),
+                                exit    = shrinkVertically()
+                            ) {
+                                Text(
+                                    text     = quantityError ?: "",
+                                    color    = MaterialTheme.colorScheme.error,
+                                    style    = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                                 )
                             }
                         }
-                    )
+
+                        // Botón registrar
+                        AppButton(
+                            text      = "Registrar ${movementType.name.lowercase()
+                                .replaceFirstChar { it.uppercase() }}",
+                            onClick   = {
+                                val qty = quantity.toIntOrNull()
+                                when {
+                                    qty == null || qty <= 0 ->
+                                        quantityError = "Ingresa una cantidad válida"
+                                    movementType == MovementType.SALIDA && qty > product.stock ->
+                                        quantityError = "Stock insuficiente (disponible: ${product.stock})"
+                                    else -> viewModel.registerMovement(
+                                        productId = product.id,
+                                        type      = movementType,
+                                        quantity  = qty
+                                    )
+                                }
+                            },
+                            modifier       = Modifier.fillMaxWidth(),
+                            enabled        = quantity.isNotBlank() && uiState !is UiState.Loading,
+                            isLoading      = uiState is UiState.Loading,
+                            containerColor = if (movementType == MovementType.ENTRADA)
+                                Color(0xFF2E7D32)
+                            else Color(0xFFC62828)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-// ─── CategoryFilterRow ─────────────────────────────────────────────────────────
+// ─── ProductSummaryCard ────────────────────────────────────────────────────────
 
 @Composable
-private fun CategoryFilterRow(
-    selectedCategory: ProductCategory?,
-    onCategorySelected: (ProductCategory) -> Unit
-) {
-    LazyRow(
-        contentPadding      = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+private fun ProductSummaryCard(product: Product) {
+    Surface(
+        shape          = RoundedCornerShape(14.dp),
+        tonalElevation = 2.dp,
+        modifier       = Modifier.fillMaxWidth()
     ) {
-        items(ProductCategory.entries) { category ->
-            val isSelected = category == selectedCategory
-            FilterChip(
-                selected = isSelected,
-                onClick  = { onCategorySelected(category) },
-                label    = { Text(category.label, fontSize = 12.sp) },
-                colors   = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor     = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    }
-}
-
-// ─── SelectableProductCard ─────────────────────────────────────────────────────
-
-@Composable
-private fun SelectableProductCard(
-    product: Product,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary
-    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-    val bgColor     = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-    else MaterialTheme.colorScheme.surface
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(bgColor)
-            .border(
-                width = if (isSelected) 2.dp else 1.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(14.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(12.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-
-            // Ícono de check cuando está seleccionado
-            Row(
-                modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment     = Alignment.Top
+        Row(
+            modifier              = Modifier.padding(14.dp),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(stockColor(product.stock).copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text       = product.category.label,
-                    style      = MaterialTheme.typography.labelSmall,
-                    color      = MaterialTheme.colorScheme.primary,
-                    fontSize   = 10.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier   = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                    text       = product.stock.toString(),
+                    fontWeight = FontWeight.Bold,
+                    fontSize   = 18.sp,
+                    color      = stockColor(product.stock)
                 )
-                AnimatedVisibility(visible = isSelected) {
-                    Icon(
-                        painter            = painterResource(R.drawable.ic_check_circle),
-                        contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.primary,
-                        modifier           = Modifier.size(16.dp)
-                    )
-                }
             }
-
-            Text(
-                text       = product.name,
-                style      = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color      = MaterialTheme.colorScheme.onSurface,
-                maxLines   = 2,
-                overflow   = TextOverflow.Ellipsis,
-                lineHeight = 18.sp
-            )
-
-            // Stock con chip de color
-            StockIndicator(stock = product.stock)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text       = product.name,
+                    style      = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines   = 1,
+                    overflow   = TextOverflow.Ellipsis
+                )
+                Text(
+                    text  = product.category.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text       = "Stock actual: ${stockLabel(product.stock)}",
+                    fontSize   = 11.sp,
+                    color      = stockColor(product.stock),
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
 
-// ─── StockIndicator ────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
-@Composable
-private fun StockIndicator(stock: Int) {
-    val (color, label) = when {
-        stock == 0 -> Color(0xFFD32F2F) to "Sin stock"
-        stock <= 5 -> Color(0xFFE65100) to "Stock: $stock"
-        else       -> Color(0xFF2E7D32) to "Stock: $stock"
-    }
-    Row(
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(7.dp)
-                .clip(RoundedCornerShape(50))
-                .background(color)
-        )
-        Text(
-            text      = label,
-            fontSize  = 11.sp,
-            color     = color,
-            fontWeight = FontWeight.Medium
-        )
-    }
+private fun stockLabel(stock: Int): String = when {
+    stock == 0 -> "Sin stock"
+    stock <= 5 -> "$stock unidades (bajo)"
+    else       -> "$stock unidades"
 }
 
-// ─── MovementInputPanel ────────────────────────────────────────────────────────
-
 @Composable
-private fun MovementInputPanel(
-    product: Product,
-    movementType: MovementType,
-    quantity: String,
-    quantityError: String?,
-    isLoading: Boolean,
-    onTypeChange: (MovementType) -> Unit,
-    onQuantityChange: (String) -> Unit,
-    onRegister: () -> Unit
-) {
-    Surface(
-        tonalElevation = 4.dp,
-        shadowElevation = 12.dp,
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Producto seleccionado
-            Row(
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Icon(
-                    painter            = painterResource(R.drawable.ic_product),
-                    contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(18.dp)
-                )
-                Column {
-                    Text(
-                        text       = product.name,
-                        style      = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color      = MaterialTheme.colorScheme.onSurface,
-                        maxLines   = 1,
-                        overflow   = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text  = "Stock actual: ${product.stock} unidades",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-            // Selector ENTRADA / SALIDA
-            Row(
-                modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                MovementType.entries.forEach { type ->
-                    val isSelected = movementType == type
-                    val (bgColor, textColor, iconRes) = when (type) {
-                        MovementType.ENTRADA if isSelected ->
-                            Triple(Color(0xFF2E7D32), Color.White, R.drawable.ic_arrow_downward)
-
-                        MovementType.SALIDA if isSelected ->
-                            Triple(Color(0xFFC62828), Color.White, R.drawable.ic_arrow_upward)
-
-                        else -> Triple(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                            if (type == MovementType.ENTRADA) R.drawable.ic_arrow_downward
-                            else R.drawable.ic_arrow_upward
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(bgColor)
-                            .clickable { onTypeChange(type) }
-                            .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment     = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter            = painterResource(iconRes),
-                            contentDescription = null,
-                            tint               = textColor,
-                            modifier           = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text       = type.name.lowercase().replaceFirstChar { it.uppercase() },
-                            color      = textColor,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize   = 14.sp
-                        )
-                    }
-                }
-            }
-
-            // Campo de cantidad
-            Column {
-                OutlinedTextField(
-                    value         = quantity,
-                    onValueChange = onQuantityChange,
-                    label         = { Text("Cantidad") },
-                    modifier      = Modifier.fillMaxWidth(),
-                    isError       = quantityError != null,
-                    singleLine    = true,
-                    shape         = RoundedCornerShape(14.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    leadingIcon   = {
-                        Icon(
-                            painter            = painterResource(R.drawable.ic_inventory),
-                            contentDescription = null,
-                            tint               = MaterialTheme.colorScheme.primary,
-                            modifier           = Modifier.size(20.dp)
-                        )
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                        errorBorderColor     = MaterialTheme.colorScheme.error,
-                        focusedLabelColor    = MaterialTheme.colorScheme.primary
-                    )
-                )
-                AnimatedVisibility(
-                    visible = quantityError != null,
-                    enter   = expandVertically(),
-                    exit    = shrinkVertically()
-                ) {
-                    Text(
-                        text     = quantityError ?: "",
-                        color    = MaterialTheme.colorScheme.error,
-                        style    = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                    )
-                }
-            }
-
-            // Botón registrar
-            AppButton(
-                text           = "Registrar ${movementType.name.lowercase().replaceFirstChar { it.uppercase() }}",
-                onClick        = onRegister,
-                modifier       = Modifier.fillMaxWidth(),
-                enabled        = quantity.isNotBlank() && !isLoading,
-                isLoading      = isLoading,
-                containerColor = if (movementType == MovementType.ENTRADA) Color(0xFF2E7D32)
-                else Color(0xFFC62828)
-            )
-        }
-    }
-}
-
-// ─── EmptyProductsMessage ──────────────────────────────────────────────────────
-
-@Composable
-private fun EmptyProductsMessage(modifier: Modifier = Modifier) {
-    Column(
-        modifier              = modifier.padding(32.dp),
-        horizontalAlignment   = Alignment.CenterHorizontally,
-        verticalArrangement   = Arrangement.spacedBy(8.dp)
-    ) {
-        Icon(
-            painter            = painterResource(R.drawable.ic_shopping_cart),
-            contentDescription = null,
-            tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-            modifier           = Modifier.size(48.dp)
-        )
-        Text(
-            text  = "No hay productos en esta categoría",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        )
-    }
+private fun stockColor(stock: Int): Color = when {
+    stock == 0 -> Color(0xFFD32F2F)
+    stock <= 5 -> Color(0xFFE65100)
+    else       -> Color(0xFF2E7D32)
 }
