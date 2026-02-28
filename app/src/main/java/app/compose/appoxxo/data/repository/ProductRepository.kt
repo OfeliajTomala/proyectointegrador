@@ -60,7 +60,7 @@ class ProductRepository {
 
         if (codigo.isNotBlank()) {
             val codigoTaken = productRef
-                .whereEqualTo("código", codigo.trim())
+                .whereEqualTo("codigo", codigo.trim())
                 .whereEqualTo("isDeleted", false)
                 .get()
                 .await()

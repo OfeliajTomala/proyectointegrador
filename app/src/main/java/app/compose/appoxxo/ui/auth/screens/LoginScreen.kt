@@ -117,7 +117,7 @@ fun LoginScreen(
                 // ── Formulario ─────────────────────────────────────
                 AppTextField(
                     value         = email,
-                    onValueChange = { email = it },
+                    onValueChange = { email = it.filter { c -> c != ' ' } },
                     label         = "Correo electrónico"
                 )
                 Spacer(modifier = Modifier.height(14.dp))

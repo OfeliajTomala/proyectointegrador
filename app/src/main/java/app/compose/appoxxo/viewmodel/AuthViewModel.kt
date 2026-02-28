@@ -59,7 +59,9 @@ class AuthViewModel(
                     _currentUser.value = it
                 }
 
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                android.util.Log.w("AuthViewModel", "syncUser  falló: ${e.message}")
+            }
         }
     }
 

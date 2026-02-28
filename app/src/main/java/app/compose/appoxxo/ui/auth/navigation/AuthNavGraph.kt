@@ -25,14 +25,12 @@ fun AuthNavGraph(
     val currentUser by authViewModel.currentUser.collectAsState()
     val uiState     by authViewModel.uiState.collectAsState()
 
-    // FIX #2: la race condition ocurría porque currentUser puede llegar
-    // DESPUÉS de que uiState cambie a Success.
-    // Solución: observamos AMBOS estados y solo navegamos cuando
-    // uiState == Success Y currentUser!= null (con rol definido).
+
     LaunchedEffect(uiState, currentUser) {
         if (uiState is UiState.Success) {
             val role = currentUser?.role
             if (role != null) {
+                authViewModel.resetState()
                 onLoginSuccess(role)
             }
             // Si currentUser aún es null, el LaunchedEffect se re-ejecutará

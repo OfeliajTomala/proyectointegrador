@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.*
 import androidx.navigation.compose.*
@@ -105,7 +106,12 @@ fun EncargadoNavGraph(
             ) {
 
                 composable(NavItem.Dashboard.route) {
-                    LaunchedEffect(Unit) { dashboardViewModel.loadStats() }
+                    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+                    LaunchedEffect(lifecycle) {
+                        lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+                            dashboardViewModel.loadStats()
+                        }
+                    }
                     DashboardScreen(
                         viewModel            = dashboardViewModel,
                         onNavigateToProducts = { navController.navigate(NavItem.ProductList.route) },

@@ -394,7 +394,7 @@ fun ProfileScreen(
                         modifier = Modifier
                             .size(38.dp)
                             .background(
-                                MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.07f),
                                 RoundedCornerShape(11.dp)
                             ),
                         contentAlignment = Alignment.Center
@@ -402,7 +402,7 @@ fun ProfileScreen(
                         Icon(
                             painter            = painterResource(id = R.drawable.ic_person),
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier           = Modifier.size(20.dp)
                         )
                     }

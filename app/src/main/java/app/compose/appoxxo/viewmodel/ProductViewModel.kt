@@ -204,6 +204,7 @@ class ProductViewModel(
                 _uiState.value = UiState.Success(Unit)
             } catch (e: Exception) {
                 _products.value = repository.getProducts()
+                _deletedProducts.value = repository.getDeletedProducts()
                 _uiState.value  = UiState.Error(e.message ?: "Error al eliminar producto")
             }
         }

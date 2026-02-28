@@ -67,7 +67,6 @@ fun AppTextField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    isPassword: Boolean = false,
     isError: Boolean = false,
     errorMessage: String? = null,
     singleLine: Boolean = true,
@@ -80,8 +79,7 @@ fun AppTextField(
             onValueChange = onValueChange,
             label         = { Text(label, fontSize = 14.sp) },
             modifier      = Modifier.fillMaxWidth(),
-            visualTransformation = if (isPassword) PasswordVisualTransformation()
-            else VisualTransformation.None,
+            visualTransformation = VisualTransformation.None,
             isError         = isError,
             singleLine      = singleLine,
             leadingIcon     = leadingIcon,
@@ -124,18 +122,24 @@ fun PasswordTextField(
     isError: Boolean = false,
     errorMessage: String? = null,
     singleLine: Boolean = true,
-    showStrengthIndicator: Boolean = false
+    showStrengthIndicator: Boolean = false,
+    matchValue: String? = null
 ) {
     val passwordVisible = remember { mutableStateOf(false) }
     val level           = strengthLevel(value)
-    val barColor        = if (value.isNotEmpty()) strengthColor(level)
-    else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+    val matches = matchValue != null && value.isNotEmpty() && value == matchValue
+
+    val barColor = when {
+        matches            -> Color(0xFF43A047)
+        value.isNotEmpty() -> strengthColor(level)
+        else               -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+    }
 
     Column(modifier = modifier) {
 
         OutlinedTextField(
             value         = value,
-            onValueChange = onValueChange,
+            onValueChange = { onValueChange(it.filter { c -> c != ' ' }) },
             label         = { Text(label, fontSize = 14.sp) },
             modifier      = Modifier.fillMaxWidth(),
             visualTransformation = if (!passwordVisible.value) PasswordVisualTransformation()
@@ -145,11 +149,14 @@ fun PasswordTextField(
             shape      = RoundedCornerShape(14.dp),
             colors     = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = when {
+                    matches                                     -> Color(0xFF43A047)
                     showStrengthIndicator && value.isNotEmpty() -> barColor
-                    else -> MaterialTheme.colorScheme.primary
+                    else                                        -> MaterialTheme.colorScheme.primary
                 },
-                unfocusedBorderColor    = MaterialTheme.colorScheme.outlineVariant,
-                errorBorderColor        = MaterialTheme.colorScheme.error,
+                unfocusedBorderColor = when {
+                    matches -> Color(0xFF43A047)
+                    else    -> MaterialTheme.colorScheme.outlineVariant
+                },                errorBorderColor        = MaterialTheme.colorScheme.error,
                 focusedLabelColor       = MaterialTheme.colorScheme.primary,
                 unfocusedLabelColor     = MaterialTheme.colorScheme.onSurfaceVariant,
                 focusedContainerColor   = MaterialTheme.colorScheme.surface,

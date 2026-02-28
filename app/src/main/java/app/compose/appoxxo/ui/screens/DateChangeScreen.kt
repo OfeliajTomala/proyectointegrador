@@ -270,17 +270,24 @@ fun ChangePasswordScreen(
     var confirmPassword  by remember { mutableStateOf("") }
     val uiState          by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var currentPasswordError by remember { mutableStateOf<String?>(null) }
 
     val passwordsMatch = confirmPassword.isEmpty() || confirmPassword == newPassword
+    val sameAsCurrentPassword = newPassword.isNotEmpty() && newPassword == currentPassword
 
     LaunchedEffect(uiState) {
         when (uiState) {
             is UiState.Success -> { viewModel.resetState(); onBack() }
-            is UiState.Error   -> {
-                snackbarHostState.showSnackbar((uiState as UiState.Error).message)
+            is UiState.Error -> {
+                val msg = (uiState as UiState.Error).message
+                if (msg.contains("password", ignoreCase = true) ||
+                    msg.contains("credential", ignoreCase = true)) {
+                    currentPasswordError = "La contraseña actual no es correcta"
+                } else {
+                    snackbarHostState.showSnackbar(msg)
+                }
                 viewModel.resetState()
-            }
-            else -> {}
+            }            else -> {}
         }
     }
 
@@ -312,14 +319,19 @@ fun ChangePasswordScreen(
             PasswordTextField(
                 value         = currentPassword,
                 onValueChange = { currentPassword = it },
-                label         = "Contraseña actual"
+                label         = "Contraseña actual",
+                isError       = currentPasswordError != null,
+                errorMessage  = currentPasswordError
             )
 
             PasswordTextField(
                 value                 = newPassword,
                 onValueChange         = { newPassword = it },
                 label                 = "Nueva contraseña",
-                showStrengthIndicator = true
+                showStrengthIndicator = true,
+                isError               = sameAsCurrentPassword,
+                errorMessage          = "La nueva contraseña debe ser diferente a la actual"
+
             )
 
             PasswordTextField(
@@ -327,12 +339,14 @@ fun ChangePasswordScreen(
                 onValueChange = { confirmPassword = it },
                 label         = "Confirmar nueva contraseña",
                 isError       = !passwordsMatch,
-                errorMessage  = "Las contraseñas no coinciden"
+                errorMessage  = "Las contraseñas no coinciden",
+                matchValue    = newPassword
             )
 
             val isFormValid = currentPassword.isNotBlank()
                     && isPasswordStrong(newPassword)
                     && newPassword == confirmPassword
+                    && !sameAsCurrentPassword
 
             AppButton(
                 text           = "Cambiar contraseña",
@@ -436,7 +450,8 @@ fun AddPasswordScreen(
                 onValueChange = { confirmPassword = it },
                 label         = "Confirmar contraseña",
                 isError       = !passwordsMatch,
-                errorMessage  = "Las contraseñas no coinciden"
+                errorMessage  = "Las contraseñas no coinciden",
+                matchValue    = newPassword
             )
 
             val isFormValid = isPasswordStrong(newPassword) && newPassword == confirmPassword

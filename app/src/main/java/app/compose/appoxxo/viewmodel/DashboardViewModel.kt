@@ -33,9 +33,6 @@ class DashboardViewModel(
     private val _uiState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val uiState: StateFlow<UiState<Unit>> = _uiState
 
-    init { loadStats() }
-
-    // FIX #6 #8: carga todas las métricas en paralelo para el dashboard completo
     fun loadStats() {
         viewModelScope.launch {
             _uiState.value = UiState.Loading
@@ -60,7 +57,7 @@ class DashboardViewModel(
                         lowStockCount         = lowStock.size,
                         lowStockProducts      = lowStock,
                         totalInventoryValue   = active.sumOf { it.price * it.stock },
-                        recentProducts        = active.takeLast(5).reversed(),
+                        recentProducts        = active.sortedByDescending { it.createdAt.seconds }.take(5),
                         totalMovements        = movements.size,
                         totalDeletedMovements = deletedMov.size
                     )

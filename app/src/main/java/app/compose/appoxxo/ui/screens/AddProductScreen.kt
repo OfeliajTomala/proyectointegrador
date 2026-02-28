@@ -41,6 +41,8 @@ fun AddProductScreen(
 
     val uiState           by viewModel.uiState.collectAsState()
     val snackbarHostState  = remember { SnackbarHostState() }
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var codeError by remember { mutableStateOf<String?>(null) }
 
     fun isValidPrice(value: String): Boolean {
         if (value.isEmpty()) return true
@@ -64,11 +66,15 @@ fun AddProductScreen(
     LaunchedEffect(uiState) {
         when (uiState) {
             is UiState.Success -> { viewModel.resetState(); onProductSaved() }
-            is UiState.Error   -> {
-                snackbarHostState.showSnackbar((uiState as UiState.Error).message)
+            is UiState.Error -> {
+                val msg = (uiState as UiState.Error).message
+                when {
+                    msg.contains("nombre", ignoreCase = true) -> nameError = msg
+                    msg.contains("código", ignoreCase = true) -> codeError = msg
+                    else -> snackbarHostState.showSnackbar(msg)
+                }
                 viewModel.resetState()
-            }
-            else -> {}
+            }            else -> {}
         }
     }
 
@@ -101,7 +107,9 @@ fun AddProductScreen(
 
             AppTextField(
                 value         = name,
-                onValueChange = { name = it },
+                isError      = nameError != null,
+                errorMessage = nameError,
+                onValueChange = { name = it; nameError = null },
                 label         = "Nombre del producto",
                 leadingIcon = {
                     Icon(
@@ -142,10 +150,10 @@ fun AddProductScreen(
 
             AppTextField(
                 value         = code,
-                onValueChange = { if (it.length <= 10) code = it.uppercase() },
+                onValueChange = { if (it.length <= 10) { code = it.uppercase(); codeError = null } },
                 label         = "Código",
-                isError       = code.isNotEmpty() && code.length < 5,
-                errorMessage  = "El código debe tener entre 5 y 10 caracteres",
+                isError       = (code.isNotEmpty() && code.length < 5) || codeError != null,
+                errorMessage  = codeError ?: "El código debe tener entre 5 y 10 caracteres",
                 leadingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.ic_code),

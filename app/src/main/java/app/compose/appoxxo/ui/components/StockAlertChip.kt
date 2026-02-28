@@ -1,7 +1,6 @@
 package app.compose.appoxxo.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -54,11 +53,6 @@ fun StockAlertChip(
             )
             .clip(RoundedCornerShape(14.dp))
             .background(containerColor)  // fondo sólido
-            .border(
-                width = 2.dp,           // borde más grueso
-                color = containerColor, // igual al color de alerta
-                shape = RoundedCornerShape(14.dp)
-            )
             .padding(horizontal = 16.dp, vertical = 8.dp) // padding más grande
     ) {
         Row(

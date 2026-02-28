@@ -43,22 +43,36 @@ fun EditProductScreen(
     var price    by remember(product) { mutableStateOf(product?.price?.toString() ?: "") }
     var stock    by remember(product) { mutableStateOf(product?.stock?.toString() ?: "") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var category         by remember { mutableStateOf(ProductCategory.OTROS) }
+    var category by remember(product) { mutableStateOf(product?.category ?: ProductCategory.OTROS) }
     var categoryExpanded by remember { mutableStateOf(false) }
 
     val uiState           by viewModel.uiState.collectAsState()
     val snackbarHostState  = remember { SnackbarHostState() }
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var codeError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(uiState) {
         when (uiState) {
             is UiState.Success -> { viewModel.resetState(); onProductUpdated() }
-            is UiState.Error   -> {
-                snackbarHostState.showSnackbar((uiState as UiState.Error).message)
+            is UiState.Error -> {
+                val msg = (uiState as UiState.Error).message
+                when {
+                    msg.contains("nombre", ignoreCase = true) -> nameError = msg
+                    msg.contains("código", ignoreCase = true) -> codeError = msg
+                    else -> snackbarHostState.showSnackbar(msg)
+                }
                 viewModel.resetState()
             }
             else -> {}
         }
     }
+
+    LaunchedEffect(productId){
+        if(products.isEmpty()) {
+            viewModel.loadProducts()
+        }
+    }
+
 
         Box(modifier = Modifier.fillMaxSize()) {
             if (product == null) {
@@ -95,8 +109,10 @@ fun EditProductScreen(
 
             AppTextField(
                 value         = name,
-                onValueChange = { name = it },
+                onValueChange = { name = it; nameError = null },
                 label         = "Nombre del producto",
+                isError       = nameError != null,
+                errorMessage  = nameError,
                 leadingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.ic_product),
@@ -135,10 +151,10 @@ fun EditProductScreen(
 
             AppTextField(
                 value         = code,
-                onValueChange = { if (it.length <= 10) code = it.uppercase() },
+                onValueChange = { if (it.length <= 10) { code = it.uppercase(); codeError = null } },
                 label         = "Código",
-                isError       = code.isNotEmpty() && code.length < 5,
-                errorMessage  = "El código debe tener entre 5 y 10 caracteres",
+                isError       = (code.isNotEmpty() && code.length < 5) || codeError != null,
+                errorMessage  = codeError ?: "El código debe tener entre 5 y 10 caracteres",
                 leadingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.ic_code),
